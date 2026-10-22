@@ -1,0 +1,279 @@
+moltotaK:mol-totaK
+mol_totaK:mol-totaK
+ataanisidin:ata-anisidin
+ata_anisidin:ata-anisidin
+iskEy:sikEy
+iskEymu:sikEymu
+polo:polu
+EmEsma:EmEsmu
+EttigEn:EtigEn
+GijEk:GejEk
+HEKiqan:HErKaqan
+Hazirma:Hazirmu
+HeqnimE:HeqnemE
+KaGan:KalGan
+KayturwEtkEn:KayturiwEtkEn
+KiliwiriN:KiliweriN
+Koyuwetip:Koyiwetip
+KoyuwetimEn:KoyiwerimEn
+Ogvnvp:Oginip
+Ogvnvx:Oginix
+OqvriwetiN:OqvrvwetiN
+OtEp:Otvp
+Otvwatidu:Otiwatidu
+Oydima:Oydimu
+OyliriniN:OylErniN
+OzEN:OzvN
+OzENliqu:OzvNliqu
+OzEmniN:OzvmniN
+aldiraxma:aldiraxmu
+aniNdin:uniNdin
+atuxtima:atuxtimu
+barma:barmu
+barmiti:barmidi
+batti:bar idi
+bejiray:bejirEy
+berEyma:berEymu
+beriptima:beriptimu
+beriwetidu:beriwatidu
+bOlEktin:bilEktin
+bolap:bolup
+bolaptikEn:boluptikEn
+boldima:boldimu
+boluwatidu:boliwatidu
+boptu:boluptu
+bop:bolup
+boptiGu:boluptiGu
+boptikEn:boluptikEn
+bulaptu:boluptu
+buluN:boluN
+dEyda:dEydu
+didim:dedim
+digvdEkmu:degvdEkmu
+elijan:Elijan
+gipimni:gepimni
+hEyri:hEyr
+hux:hox
+hoxlaxKim:hoxlaxKum
+hoxum:huxum
+igiz:egiz
+iqEttim:iqtim
+itikmu:etikmu
+ixla:ixlar
+jalapma:jalapmu
+kEp:kelip
+kEptima:kEptimu
+kExtE:kEqtE
+kOrdvNlarma:kOrdvNlarmu
+kOrixidiGan:kOrvxidiGan
+kiqilik:keqilik
+kirguq:kirgiqE
+kitip:ketip
+kiyin:keyin
+kuruslar:kurslar
+leniyEgE:liniyEgE
+mEnma:mEnmu
+mEylima:mEylimu
+maKulma:maKulmu
+mandaK:mundaK
+meniNma:meniNmu
+migabayt:megabayt
+migabaytiNiz:megabaytiNiz
+migabaytnila:megabaytnila
+miniN:meniN
+moto:motor
+motosiklit:motsiklit
+munda:mundaK
+mundaKda:mundaKta
+nim:nemE
+nimE:nemE
+nimini:nemini
+numur:nomur
+numurGa:nomurGa
+numuri:nomuri
+numurni:nomurni
+numurumqu:nomurumqu
+olturiwatimiz:olturuwatimiz
+qvxvwalay:qvxiwalay
+rEhmEt:rEHmEt
+ras:rast
+sekunt:sikunt
+sirttima:sirttimu
+tEkxvrvsiz:tEkxvrisiz
+telefoniNni:telefonuNni
+telefun:telefon
+telefuniNiz:telefoniNiz
+telefunni:telefonni
+telkamira:telekamera
+toKKuzma:toKKuzmu
+turdiNizma:turdiNizmu
+turdiNlarmu:turduNlarmu
+tvgidima:tvgidimu
+tvgvtvp:tvgitip
+unda:undaK
+xundaKma:xundaKmu
+yalGuzma:yalGuzmu
+yanfun:yanfon
+yisE:yEsE
+yiyEligEn:yEyEligEn
+yoKma:yoKmu
+yvgvrvxi:yvgvrixi
+bolGandikin:bolGandin keyin
+KilGandikin:KilGandin keyin
+oKuGandikin:oKuGandin keyin
+mEslEn:mEsilEn
+ixkEn:ix ikEn
+yahxikEn:yahxi ikEn
+kEptu:keliptu
+uyKa:uyKu
+yeKin_qu:yeKinqu
+kEptikEn:keliptikEn
+boliduqu:bolidu qu
+muHimqu:muHim qu
+sadiK_qu:sadiKqu
+bolmaydu_qu:bolmayduqu
+bilgEndikin:bilgEndin keyin
+kEtkEndikin:kEtkEndin keyin
+bulammay:bolalmay
+toKKizinqi:toKKuzinqi
+maysirEN:maysa raN
+aGzimGa:eGizimGa
+qvxili:qvxEyli
+muxta:muxundaK
+soGuKti:soGuK idi
+OtEx:Otvx
+toluK_siz:toluKsiz
+yoKti:yoK idi
+noqikEn:noqi ikEn
+EnEniwiy:EnEniwi
+tuluKlimiliri:toluKlimiliri
+buniNdimu:buniNdinmu
+yiginimiz:yeginimiz
+mudapiyElinix:mudapiElinix
+gipimizgE:gepimizgE
+yitEkqisi:yetEkqisi
+mEwjud:mEwjut
+mEslisidE:mEsilisidE
+miNisiniN:meNisiniN
+tamaka:tamaK
+nizar:nizam
+yiGin:yeGin
+qoKum:quKum
+HEbibulla:Hebibulla
+xuji:xvji
+tvEngE:tOwEngE
+naHiyilik:naHiylik
+bilix:berix
+juNgo:joNgu
+sekretar:sekritar
+yediNlar:yidiNlar
+KElbdaxlar:KElibdaxlar
+KoNida:Kolida
+mErEmnisa_han:mErEmnisahan
+qiKiriwelixKa:qiKirwelixKa
+dilo:delo
+bejirgili:bijirgili
+yaN:yEN
+yeriniN:yezniN
+hEnzuniN:hEnzuqniN
+nomuriNiz:numuriNiz
+kEntkE:kEntigE
+biliK:beliK
+jiKliK:jeKliri
+diniy:dinniy
+bilim:bilimi
+rozi:ruzi
+yiGinGa:yeGinGa
+pitir:petir
+xujisi:xvjisi
+tErbiyilEx:tErbiylEx
+salamEtlikim:salamEtlikimu
+yuKiriGa:yuKirGa
+quKum:qoKum
+yatKan:yapKan
+biwastE:biwasitE
+tvgEtsEm:tvgEtsE
+xEhsiy:xEhsi
+KoyisilEr:KilisilEr
+qataK:qatap
+yollandi:yollarda
+tirixqanliK:tirixqanliKi
+Kalsam:KalsaN
+naHiylik:naHiyilik
+sortniN:sortiniN
+yuKiridin:yuKirdin
+ozuKluKmay:ozuKluK may
+keyinsEn:keyin sEn
+birix:bir ix
+nurimangvlvm:nuriman gvlvm
+ruKiyEmsiz:ruKiyEm siz
+onbirgiqE:on birgiqE
+yoGanbax:yoGan bax
+HEdEp:HE dEp
+birmunqE:bir munqE
+sEkkizmiN:sEkkiz miN
+ikkiyvz:ikki yvz
+onmiN:on miN
+birjiliK:bir jiliK
+uyErdE:u yErdE
+gOxgirdE:gOx girdE
+degEnti:degEn idi
+xEHidEhanni:xEHidE hanni
+HErKandaK:HEr KandaK
+EssalamuElEykum:Essalamu ElEykum
+yahximusiz:yahximu siz
+ixKilip:ix Kilip
+yahximusilEr:yahximu silEr
+ottuzmiN:ottuz miN
+yahxiix:yahxi ix
+HErhil:HEr hil
+tehimui:tehimu i
+birhil:bir hil
+Hawa_rayi:Hawarayi
+raNpiza_hanis:raNpizahanisi
+mir_awut:mirawut
+hEnzu_tili:hEnzutili
+yaxar_jan:yaxarjan
+mvxvk_eyiK:mvxvkeyiK
+Heq_KandaK:HeqKandaK
+yahximu_siz:yahximusiz
+Gol_toGrak:GoltoGrak
+yazidikEn_mEn:yazdikEnmEn
+meniN_la:meniNla
+hEnzu_qilixip:hEnzuqilixip
+bejirip_tikEnsiz:bejiriptikEnsiz
+Kilmay_siz:Kilmaysiz
+bir_az:biraz
+yasin_Kari:yasinKari
+bizmu_xu:biz muxu
+dawalax_ni:dawalaxni
+ix_Kilip:ixKilip
+Hey:HE
+Him:HE
+Hi:HE
+HHE:HE
+E:HE
+Hem:HE
+HEm:HE
+kam:kEm
+ma:mawu
+ba:bar
+an:andin
+a:awu
+EjEp:EjEb
+wiy:wey
+woy:wey
+way:wey
+wuy:wey
+Hoy:wey
+hoy:wey
+wEy:wey
+wiyyEy:wiyEy
+wayyEy:wiyEy
+wuyyEy:wiyEy
++mikrosoft+:+microsoft+
++halo+:+hello+
++ayfun+:+iPhone+
++kiyu+_+kiyu+:+QQ+
+j_j:++
+j_j_j:++

@@ -1,0 +1,50 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# ---- IDE ----
+.idea/
+.vscode/
+
+# ---- 构建产物 ----
+build/
+build_debug/
+build_test/
+dist/
+dist_debug/
+dist_test/
+*.spec.bak
+
+# ---- 运行时输出 ----
+logs/
+records/
+gui_test_out.txt
+gui_test_err.txt
+
+# ---- src_archive 只读参考工程中的产物（4GB，绝大部分是这些）----
+# SVN 元数据
+src_archive/**/.svn/
+# Visual Studio 预编译头/中间产物
+src_archive/**/*.ipch
+src_archive/**/*.sdf
+src_archive/**/*.db
+src_archive/**/*.tlog
+src_archive/**/*.obj
+src_archive/**/*.pdb
+src_archive/**/*.ilk
+src_archive/**/*.exp
+src_archive/**/*.lib
+# 虚拟环境
+src_archive/**/venv/
+# 固件/安装包/固件仓库
+src_archive/**/*.bin
+src_archive/**/*.zip
+src_archive/**/*.pack
+src_archive/**/*.iso
+# 打包输出
+src_archive/**/Release/*.exe
+src_archive/**/Debug/*.exe

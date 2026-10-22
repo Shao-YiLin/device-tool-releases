@@ -1,0 +1,417 @@
+卷 数据 的文件夹 PATH 列表
+卷序列号为 0000024A C80E:2934
+E:\PYTHONPROJECTS\NEWMOUSETOOL\SRC_ARCHIVE\T8_LIGHT
++---doc
+|       T8 灯光版V1.0 20221215.xlsx
+|       键盘键值keycode定义.xls
+|       马道数据通信协议.docx
+|       马道数据通信协议.pdf
+|       
+\---source
+    |   .cproject
+    |   .project
+    |   boot.link
+    |   config.h
+    |   div_mod.S
+    |   drivers.h
+    |   sdk_version.txt
+    |   tl_check_fw.sh
+    |   tl_check_fw2.exe
+    |   tl_common.h
+    |   
+    +---.settings
+    |       org.eclipse.cdt.core.prefs
+    |       org.eclipse.core.resources.prefs
+    |       
+    +---8258_dual_keyboard
+    |   |   8258_dual_keyboard.bin
+    |   |   8258_dual_keyboard.lst
+    |   |   makefile
+    |   |   objects.mk
+    |   |   sources.mk
+    |   |   subdir.mk
+    |   |   T8_light.elf
+    |   |   
+    |   +---application
+    |   |   +---app
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   +---keyboard
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   +---print
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   \---usbstd
+    |   |           subdir.mk
+    |   |           
+    |   +---boot
+    |   |   +---8251
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   +---8253
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   \---8258
+    |   |           subdir.mk
+    |   |           
+    |   +---common
+    |   |       subdir.mk
+    |   |       
+    |   +---drivers
+    |   |   \---8258
+    |   |           subdir.mk
+    |   |           
+    |   +---third
+    |   |   +---crc
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   +---fifo
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   +---hash
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   +---md5
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   +---protocol
+    |   |   |       subdir.mk
+    |   |   |       
+    |   |   \---voice
+    |   |           subdir.mk
+    |   |           
+    |   \---vendor
+    |       +---8258_dual_kb
+    |       |       subdir.mk
+    |       |       
+    |       \---common
+    |               subdir.mk
+    |               
+    +---application
+    |   |   rf_frame.h
+    |   |   
+    |   +---app
+    |   |       usbaud.c
+    |   |       usbaud.h
+    |   |       usbaud_i.h
+    |   |       usbcdc.c
+    |   |       usbcdc.h
+    |   |       usbcdc_i.h
+    |   |       usbkb.c
+    |   |       usbkb.h
+    |   |       usbkb_i.h
+    |   |       usbmouse.c
+    |   |       usbmouse.h
+    |   |       usbmouse_i.h
+    |   |       
+    |   +---keyboard
+    |   |       keyboard.c
+    |   |       keyboard.h
+    |   |       
+    |   +---print
+    |   |       putchar.c
+    |   |       putchar.h
+    |   |       u_printf.c
+    |   |       u_printf.h
+    |   |       
+    |   \---usbstd
+    |           AudioClassCommon.h
+    |           CDCClassCommon.h
+    |           CDCClassDevice.h
+    |           HIDClassCommon.h
+    |           HIDClassDevice.h
+    |           HIDReportData.h
+    |           MassStorageClassCommon.h
+    |           PrinterClassCommon.h
+    |           stdDescriptors.h
+    |           StdRequestType.h
+    |           usb.c
+    |           usb.h
+    |           USBController.h
+    |           usbdesc.c
+    |           usbdesc.h
+    |           usbhw.c
+    |           usbhw.h
+    |           usbhw_i.h
+    |           usbkeycode.h
+    |           
+    +---boot
+    |   |   boot_16k_retn_8251_8253_8258.link
+    |   |   boot_32k_retn_8251.link
+    |   |   boot_32k_retn_8253_8258.link
+    |   |   
+    |   +---8251
+    |   |       cstartup_8251.S
+    |   |       cstartup_8251_RET_16K.S
+    |   |       cstartup_8251_RET_32K.S
+    |   |       
+    |   +---8253
+    |   |       cstartup_8253.S
+    |   |       cstartup_8253_RET_16K.S
+    |   |       cstartup_8253_RET_32K.S
+    |   |       
+    |   \---8258
+    |           cstartup_8258.S
+    |           cstartup_8258_RET_16K.S
+    |           cstartup_8258_RET_32K.S
+    |           
+    +---common
+    |   |   assert.h
+    |   |   bit.h
+    |   |   breakpoint.c
+    |   |   breakpoint.h
+    |   |   log.c
+    |   |   log.h
+    |   |   log_id.h
+    |   |   macro_trick.h
+    |   |   selection_sort.c
+    |   |   selection_sort.h
+    |   |   static_assert.h
+    |   |   string.c
+    |   |   string.h
+    |   |   types.h
+    |   |   utility.c
+    |   |   utility.h
+    |   |   
+    |   \---config
+    |           user_config.h
+    |           
+    +---drivers
+    |   \---8258
+    |           adc.c
+    |           adc.h
+    |           aes.c
+    |           aes.h
+    |           analog.c
+    |           analog.h
+    |           audio.c
+    |           audio.h
+    |           bsp.c
+    |           bsp.h
+    |           clock.c
+    |           clock.h
+    |           compiler.h
+    |           dfifo.h
+    |           dma.h
+    |           driver_8258.h
+    |           emi.c
+    |           emi.h
+    |           flash.c
+    |           flash.h
+    |           gpio.h
+    |           gpio_8258.c
+    |           gpio_8258.h
+    |           gpio_default_8258.h
+    |           i2c.c
+    |           i2c.h
+    |           irq.h
+    |           lpc.c
+    |           lpc.h
+    |           pga.h
+    |           pm.h
+    |           pwm.h
+    |           qdec.c
+    |           qdec.h
+    |           random.h
+    |           register.h
+    |           register_8258.h
+    |           rf_drv.h
+    |           rf_pa.c
+    |           rf_pa.h
+    |           s7816.c
+    |           s7816.h
+    |           spi.c
+    |           spi.h
+    |           spi_i.h
+    |           timer.c
+    |           timer.h
+    |           uart.c
+    |           uart.h
+    |           watchdog.c
+    |           watchdog.h
+    |           
+    +---proj_lib
+    |       authentic.h
+    |       firmware_encrypt.h
+    |       libauthentication.a
+    |       libcodecSDK.a
+    |       libfirmware_encrypt.a
+    |       liblt_8258-20191126-161340.zip
+    |       liblt_8258.a
+    |       libSinCheck.a
+    |       
+    +---stack
+    |   \---ble
+    |       |   ble.h
+    |       |   ble_common.h
+    |       |   ble_controller.h
+    |       |   blt_config.h
+    |       |   trace.h
+    |       |   
+    |       +---attr
+    |       |       att.h
+    |       |       gatt.h
+    |       |       gatt_uuid.h
+    |       |       
+    |       +---bqb
+    |       |       bqb_ll.h
+    |       |       
+    |       +---crypt
+    |       |   |   aes_ccm.h
+    |       |   |   le_crypto.h
+    |       |   |   
+    |       |   \---aes
+    |       |           aes_att.h
+    |       |           
+    |       +---gap
+    |       |       gap.h
+    |       |       gap_event.h
+    |       |       
+    |       +---hci
+    |       |       hci.h
+    |       |       hci_cmd.h
+    |       |       hci_const.h
+    |       |       hci_event.h
+    |       |       usb_desc.h
+    |       |       
+    |       +---l2cap
+    |       |       l2cap.h
+    |       |       
+    |       +---ll
+    |       |   |   ll.h
+    |       |   |   ll_adv.h
+    |       |   |   ll_encrypt.h
+    |       |   |   ll_ext.h
+    |       |   |   ll_ext_adv.h
+    |       |   |   ll_ext_scan.h
+    |       |   |   ll_init.h
+    |       |   |   ll_pm.h
+    |       |   |   ll_scan.h
+    |       |   |   ll_whitelist.h
+    |       |   |   
+    |       |   \---ll_conn
+    |       |           ll_conn.h
+    |       |           ll_conn_csa.h
+    |       |           ll_conn_phy.h
+    |       |           ll_master.h
+    |       |           ll_slave.h
+    |       |           
+    |       +---llms
+    |       |       llms.h
+    |       |       llms_adv.h
+    |       |       llms_init.h
+    |       |       llms_master.h
+    |       |       llms_scan.h
+    |       |       llms_slave.h
+    |       |       llms_slot.h
+    |       |       trace.h
+    |       |       
+    |       +---phy
+    |       |       phy.h
+    |       |       phy_test.h
+    |       |       
+    |       +---service
+    |       |       ble_ll_ota.h
+    |       |       device_information.h
+    |       |       hids.h
+    |       |       
+    |       \---smp
+    |               smp.h
+    |               smp_central.h
+    |               smp_const.h
+    |               smp_peripheral.h
+    |               smp_storage.h
+    |               
+    +---third
+    |   +---crc
+    |   |       mblue_crc.c
+    |   |       mblue_crc.h
+    |   |       
+    |   +---fifo
+    |   |       mblue_comm.h
+    |   |       mblue_fifo.c
+    |   |       mblue_fifo.h
+    |   |       
+    |   +---hash
+    |   |       mblue_hash.c
+    |   |       mblue_hash.h
+    |   |       
+    |   +---md5
+    |   |       mblue_md5.c
+    |   |       mblue_md5.h
+    |   |       
+    |   +---protocol
+    |   |       protocol_define.h
+    |   |       protocol_manager.c
+    |   |       protocol_manager.h
+    |   |       
+    |   \---voice
+    |       |   voice_process.c
+    |       |   voice_process.h
+    |       |   
+    |       \---ico
+    |               ivCodecOne.h
+    |               ivDebug.h
+    |               ivDefine.h
+    |               ivErrorCode.h
+    |               ivPlatform.h
+    |               
+    \---vendor
+        +---8258_dual_kb
+        |       AAA_app.c
+        |       AAA_app_att.c
+        |       AAA_app_config.h
+        |       AAA_app_config_Telink_QFN32.h
+        |       AAA_battery_check.c
+        |       AAA_battery_check.h
+        |       AAA_LED.c
+        |       AAA_main.c
+        |       AAA_Public.c
+        |       AAA_public_Config.h
+        |       AAA_Public_KeyValue.h
+        |       AAA_USB_app.c
+        |       apple_mac.c
+        |       audio_manager.c
+        |       audio_manager.h
+        |       battery_manager.c
+        |       battery_manager.h
+        |       custom_button_logic_manager.c
+        |       custom_button_logic_manager.h
+        |       data_out_manager.c
+        |       data_out_manager.h
+        |       keyboard_manager.c
+        |       keyboard_scan.c
+        |       keyboard_scan.h
+        |       led_manager.c
+        |       led_manager.h
+        |       logic_protocol_manager.c
+        |       logic_protocol_manager.h
+        |       mblue_identification_service.c
+        |       OTA_manager.c
+        |       OTA_manager.h
+        |       OTA_Telink_platform_define.h
+        |       pair_info_manager.c
+        |       pair_info_manager.h
+        |       pair_logic_manager.c
+        |       sonix_keyboard_manager.c
+        |       sonix_keyboard_manager.h
+        |       USB_manager.c
+        |       USB_manager.h
+        |       
+        \---common
+                blt_common.c
+                blt_common.h
+                blt_fw_sign.c
+                blt_fw_sign.h
+                blt_led.c
+                blt_led.h
+                blt_soft_timer.c
+                blt_soft_timer.h
+                default_config.h
+                SinAudioCheck.h
+                sincheck_logic.c
+                tl_audio.c
+                tl_audio.h
+                user_config.h
+                

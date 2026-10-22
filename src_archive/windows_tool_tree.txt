@@ -1,0 +1,695 @@
+卷 数据 的文件夹 PATH 列表
+卷序列号为 000001FE C80E:2934
+E:\PYTHONPROJECTS\NEWMOUSETOOL\SRC_ARCHIVE\WINDOWS_TOOL
++---dllSpeech
+|   |   dllSpeech.vcxproj
+|   |   dllSpeech.vcxproj.filters
+|   |   dllSpeech.vcxproj.user
+|   |   dllSpeechInterface.cpp
+|   |   dllSpeechInterface.h
+|   |   
+|   +---include
+|   |       libspeech_device_manager.h
+|   |       libspeech_voice.h
+|   |       lib_device_define.h
+|   |       
+|   +---libs
+|   |       libProtocolLogic.lib
+|   |       
+|   \---Release
+|       |   dllSpeech.log
+|       |   dllSpeechInterface.obj
+|       |   vc141.pdb
+|       |   
+|       \---dllSpeech.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               dllSpeech.lastbuildstate
+|               link-cvtres.read.1.tlog
+|               link-cvtres.write.1.tlog
+|               link-rc.read.1.tlog
+|               link-rc.write.1.tlog
+|               link.command.1.tlog
+|               link.read.1.tlog
+|               link.write.1.tlog
+|               unsuccessfulbuild
+|               
++---dllUsb
+|   |   dllUsb.vcxproj
+|   |   dllUsb.vcxproj.filters
+|   |   dllUsb.vcxproj.user
+|   |   mspeech_usb.c
+|   |   mspeech_usb.h
+|   |   
+|   +---include
+|   |       lib_speech_usb.h
+|   |       
+|   +---libs
+|   |       libusb.lib
+|   |       
+|   \---Release
+|       |   dllUsb.log
+|       |   mspeech_usb.obj
+|       |   vc141.pdb
+|       |   
+|       \---mspeech_usb.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               link.command.1.tlog
+|               link.read.1.tlog
+|               link.write.1.tlog
+|               mspeech_usb.lastbuildstate
+|               unsuccessfulbuild
+|               
++---doc
+|   |   aes.7z
+|   |   authentic.h
+|   |   esr2017.zip
+|   |   libauthentication.a
+|   |   
+|   +---aes
+|   |   \---aes
+|   |       |   AESCrypt.cpp
+|   |       |   AESCrypt.h
+|   |       |   
+|   |       \---openssl
+|   |               aes.h
+|   |               aes_cfb.cpp
+|   |               aes_core.cpp
+|   |               aes_locl.h
+|   |               cfb128.cpp
+|   |               md32_common.h
+|   |               md5.h
+|   |               md5_dgst.cpp
+|   |               md5_locl.h
+|   |               md5_one.cpp
+|   |               modes.h
+|   |               opensslconf.h
+|   |               
+|   \---lib_export
+|           libusb.lib
+|           
++---exportLibrary
+|   +---dll
+|   |       mspeech_framework.dll
+|   |       mspeech_framework.lib
+|   |       mspeech_pcm.dll
+|   |       mspeech_pcm.lib
+|   |       mspeech_usb.dll
+|   |       mspeech_usb.lib
+|   |       mspeech_usb_manager.dll
+|   |       mspeech_usb_manager.lib
+|   |       
+|   \---include
+|           mspeech_framework.h
+|           mspeech_pcm.h
+|           mspeech_usb.h
+|           mspeech_usb_manager.h
+|           
++---IflySm
+|   |   IflySm.sln
+|   |   
+|   \---IflySm
+|       |   IflySm.cpp
+|       |   IflySm.h
+|       |   IflySm.vcxproj
+|       |   IflySm.vcxproj.filters
+|       |   IflySm.vcxproj.user
+|       |   mblue_md5.h
+|       |   
+|       \---aes
+|               aes.h
+|               AESCrypt.cpp
+|               AESCrypt.h
+|               aes_cfb.cpp
+|               aes_core.cpp
+|               aes_locl.h
+|               cfb128.cpp
+|               md32_common.h
+|               md5.h
+|               md5_dgst.cpp
+|               md5_locl.h
+|               md5_one.cpp
+|               modes.h
+|               opensslconf.h
+|               
++---libDecode
+|   |   framework.h
+|   |   ico_manager.c
+|   |   ico_manager.h
+|   |   libDecode.sln
+|   |   libDecode.vcxproj
+|   |   libDecode.vcxproj.filters
+|   |   libDecode.vcxproj.user
+|   |   libspeech_voice.c
+|   |   libspeech_voice.h
+|   |   mblue_heap.c
+|   |   mblue_heap.h
+|   |   opus_manager.c
+|   |   opus_manager.h
+|   |   voice_base.h
+|   |   voice_manager.c
+|   |   voice_manager.h
+|   |   
+|   +---include
+|   |   |   commondefine.h
+|   |   |   
+|   |   +---ico
+|   |   |       ivCodecOne.h
+|   |   |       ivDebug.h
+|   |   |       ivDefine.h
+|   |   |       ivErrorCode.h
+|   |   |       ivPlatform.h
+|   |   |       
+|   |   \---opus
+|   |           opus.h
+|   |           opus_custom.h
+|   |           opus_defines.h
+|   |           opus_multistream.h
+|   |           opus_projection.h
+|   |           opus_types.h
+|   |           
+|   +---libs
+|   |       bleaudio_32.lib
+|   |       bleaudio_64.lib
+|   |       libusb.lib
+|   |       opus.lib
+|   |       
+|   \---Release
+|       |   ico_manager.obj
+|       |   libDecode.log
+|       |   libDecode.pdb
+|       |   libspeech_voice.obj
+|       |   mblue_heap.obj
+|       |   opus_manager.obj
+|       |   voice_manager.obj
+|       |   
+|       \---libDecode.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               Lib-link.8520.read.1.tlog
+|               Lib-link.8520.write.1.tlog
+|               Lib.command.1.tlog
+|               libDecode.lastbuildstate
+|               
++---libProtocolFramework
+|   |   CommonProtocolLogicManager.c
+|   |   CommonProtocolLogicManager.h
+|   |   common_math.h
+|   |   framework.h
+|   |   libProtocolLogic.sln
+|   |   libProtocolLogic.vcxproj
+|   |   libProtocolLogic.vcxproj.filters
+|   |   libProtocolLogic.vcxproj.user
+|   |   libprotocol_1_define.h
+|   |   libprotocol_2_define.h
+|   |   libprotocol_logic_define.h
+|   |   libspeech_device_manager.c
+|   |   libspeech_device_manager.h
+|   |   lib_device_define.h
+|   |   lib_device_manager.c
+|   |   lib_device_manager.h
+|   |   MadaoMessage.c
+|   |   MadaoMessage.h
+|   |   mblue_aes.c
+|   |   mblue_aes.h
+|   |   mblue_fifo.c
+|   |   mblue_fifo.h
+|   |   mblue_hash.c
+|   |   mblue_hash.h
+|   |   mblue_heap.c
+|   |   mblue_heap.h
+|   |   mblue_md5.c
+|   |   mblue_md5.h
+|   |   protocol_1_logic_manager.c
+|   |   protocol_1_logic_manager.h
+|   |   protocol_2_logic_manager.h
+|   |   protocol_define.h
+|   |   protocol_logic_manager.c
+|   |   
+|   +---include
+|   |       commondefine.h
+|   |       libspeech_protocol.h
+|   |       
+|   +---libs
+|   |       libProtocol.lib
+|   |       
+|   \---Release
+|       |   CommonProtocolLogicManager.obj
+|       |   libProtocolFramework.pdb
+|       |   libProtocolLogic.log
+|       |   libspeech_device_manager.obj
+|       |   lib_device_manager.obj
+|       |   MadaoMessage.obj
+|       |   mblue_aes.obj
+|       |   mblue_fifo.obj
+|       |   mblue_hash.obj
+|       |   mblue_heap.obj
+|       |   mblue_md5.obj
+|       |   protocol_logic_manager.obj
+|       |   
+|       \---libProto.DC951120.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               Lib-link.read.1.tlog
+|               Lib-link.write.1.tlog
+|               Lib.command.1.tlog
+|               libProtocolFramework.lastbuildstate
+|               
++---libProtocolLogic
+|   |   framework.h
+|   |   libProtocolLogic.sln
+|   |   libProtocolLogic.vcxproj
+|   |   libProtocolLogic.vcxproj.filters
+|   |   libProtocolLogic.vcxproj.user
+|   |   libprotocol_1_define.h
+|   |   libprotocol_2_define.h
+|   |   libprotocol_logic_define.h
+|   |   libspeech_device_manager.c
+|   |   libspeech_device_manager.h
+|   |   lib_device_define.h
+|   |   lib_device_manager.c
+|   |   lib_device_manager.h
+|   |   mblue_aes.c
+|   |   mblue_aes.h
+|   |   mblue_fifo.c
+|   |   mblue_fifo.h
+|   |   mblue_hash.c
+|   |   mblue_hash.h
+|   |   mblue_heap.c
+|   |   mblue_heap.h
+|   |   mblue_md5.c
+|   |   mblue_md5.h
+|   |   protocol_1_logic_manager.c
+|   |   protocol_1_logic_manager.h
+|   |   protocol_2_logic_manager.h
+|   |   protocol_define.h
+|   |   protocol_logic_manager.c
+|   |   
+|   +---include
+|   |       commondefine.h
+|   |       libspeech_protocol.h
+|   |       libspeech_voice.h
+|   |       lib_speech_usb.h
+|   |       
+|   \---libs
+|           libDecode.lib
+|           libProtocol.lib
+|           libUsb.lib
+|           
++---libSinCheck
+|   |   libSinCheck.sln
+|   |   
+|   +---.vs
+|   |   \---libSinCheck
+|   |       \---v15
+|   |           |   .suo
+|   |           |   Browse.VC.db
+|   |           |   
+|   |           \---ipch
+|   |                   d42cfe88d52f0fce.ipch
+|   |                   
+|   \---libSinCheck
+|       |   dllPcmSinCheck.cpp
+|       |   dllPcmSinCheck.h
+|       |   libSinCheck.vcxproj
+|       |   libSinCheck.vcxproj.filters
+|       |   libSinCheck.vcxproj.user
+|       |   
+|       +---include
+|       |       SinAudioCheck.h
+|       |       
+|       +---libs
+|       |       SinCheck.lib
+|       |       
+|       \---Release
+|           |   dllPcmSinCheck.obj
+|           |   libSinCheck.log
+|           |   vc141.pdb
+|           |   
+|           \---libSinCheck.tlog
+|                   CL.command.1.tlog
+|                   CL.read.1.tlog
+|                   CL.write.1.tlog
+|                   libSinCheck.lastbuildstate
+|                   libSinCheck.write.1u.tlog
+|                   link.9716.delete.1.tlog
+|                   link.command.1.tlog
+|                   link.read.1.tlog
+|                   link.write.1.tlog
+|                   
++---libUsb
+|   |   framework.h
+|   |   libUsb.sln
+|   |   libUsb.vcxproj
+|   |   libUsb.vcxproj.filters
+|   |   libUsb.vcxproj.user
+|   |   lib_speech_usb.c
+|   |   lib_speech_usb.h
+|   |   mblue_heap.c
+|   |   mblue_heap.h
+|   |   usb_manager.c
+|   |   usb_manager.h
+|   |   
+|   +---include
+|   |       commondefine.h
+|   |       libusb.h
+|   |       
+|   +---libs
+|   |       libusb.lib
+|   |       
+|   \---Release
+|       |   libUsb.log
+|       |   libUsb.pdb
+|       |   lib_speech_usb.obj
+|       |   mblue_heap.obj
+|       |   usb_manager.obj
+|       |   
+|       \---libUsb.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               Lib-link.read.1.tlog
+|               Lib-link.write.1.tlog
+|               Lib.command.1.tlog
+|               libUsb.lastbuildstate
+|               
++---mspeech_framework
+|   |   mspeech_framework.c
+|   |   mspeech_framework.h
+|   |   mspeech_framework.vcxproj
+|   |   mspeech_framework.vcxproj.filters
+|   |   mspeech_framework.vcxproj.user
+|   |   stdafx.h
+|   |   targetver.h
+|   |   
+|   +---include
+|   |       libspeech_device_manager.h
+|   |       lib_device_define.h
+|   |       
+|   +---libs
+|   |       libProtocolFramework.lib
+|   |       
+|   \---Release
+|       |   mspeech_framework.log
+|       |   mspeech_framework.obj
+|       |   vc141.pdb
+|       |   
+|       \---mspeech_.6893A791.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               link.command.1.tlog
+|               link.read.1.tlog
+|               link.write.1.tlog
+|               mspeech_framework.lastbuildstate
+|               mspeech_framework.write.1u.tlog
+|               
++---mspeech_pcm
+|   |   dllmain.cpp
+|   |   mspeech_pcm.c
+|   |   mspeech_pcm.h
+|   |   mspeech_pcm.vcxproj
+|   |   mspeech_pcm.vcxproj.filters
+|   |   mspeech_pcm.vcxproj.user
+|   |   stdafx.cpp
+|   |   stdafx.h
+|   |   targetver.h
+|   |   
+|   +---include
+|   |       libspeech_voice.h
+|   |       
+|   +---libs
+|   |       libDecode.lib
+|   |       
+|   \---Release
+|       |   dllmain.obj
+|       |   mspeech_pcm.log
+|       |   mspeech_pcm.obj
+|       |   mspeech_pcm.pch
+|       |   stdafx.obj
+|       |   vc141.pdb
+|       |   
+|       \---mspeech_pcm.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               link.command.1.tlog
+|               link.read.1.tlog
+|               link.write.1.tlog
+|               mspeech_pcm.lastbuildstate
+|               mspeech_pcm.write.1u.tlog
+|               
++---mspeech_spp
+|   |   dllmain.cpp
+|   |   mspeech_spp.cpp
+|   |   mspeech_spp.h
+|   |   mspeech_spp.vcxproj
+|   |   mspeech_spp.vcxproj.filters
+|   |   mspeech_spp.vcxproj.user
+|   |   spp_manager.cpp
+|   |   spp_manager.h
+|   |   stdafx.cpp
+|   |   stdafx.h
+|   |   targetver.h
+|   |   
+|   \---Release
+|       |   dllmain.obj
+|       |   mspeech_spp.log
+|       |   mspeech_spp.obj
+|       |   mspeech_spp.pch
+|       |   spp_manager.obj
+|       |   stdafx.obj
+|       |   vc141.pdb
+|       |   
+|       \---mspeech_spp.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               link.command.1.tlog
+|               link.delete.1.tlog
+|               link.read.1.tlog
+|               link.write.1.tlog
+|               mspeech_spp.lastbuildstate
+|               mspeech_spp.write.1u.tlog
+|               
++---mspeech_usb_manager
+|   |   mblue_crc.c
+|   |   mspeech_usb_manager.c
+|   |   mspeech_usb_manager.h
+|   |   mspeech_usb_manager.vcxproj
+|   |   mspeech_usb_manager.vcxproj.filters
+|   |   mspeech_usb_manager.vcxproj.user
+|   |   
+|   +---include
+|   |       commondefine.h
+|   |       libspeech_protocol.h
+|   |       mblue_crc.h
+|   |       
+|   +---libs
+|   |       libProtocol.lib
+|   |       
+|   \---Release
+|       |   mblue_crc.obj
+|       |   mspeech_usb_manager.log
+|       |   mspeech_usb_manager.obj
+|       |   vc141.pdb
+|       |   
+|       \---mspeech_.6C964EE1.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               link.command.1.tlog
+|               link.delete.1.tlog
+|               link.read.1.tlog
+|               link.write.1.tlog
+|               mspeech_usb_manager.lastbuildstate
+|               mspeech_usb_manager.write.1u.tlog
+|               
++---ProtocolLib
+|   |   framework.h
+|   |   libspeech_protocol.c
+|   |   libspeech_protocol.h
+|   |   mblue_crc.c
+|   |   mblue_crc.h
+|   |   mblue_fifo.c
+|   |   mblue_fifo.h
+|   |   mblue_hash.c
+|   |   mblue_hash.h
+|   |   mblue_heap.c
+|   |   mblue_heap.h
+|   |   pch.cpp
+|   |   pch.h
+|   |   ProtocolLib.sln
+|   |   ProtocolLib.vcxproj
+|   |   ProtocolLib.vcxproj.filters
+|   |   ProtocolLib.vcxproj.user
+|   |   protocol_define.h
+|   |   protocol_manager.c
+|   |   protocol_manager.h
+|   |   
+|   +---include
+|   |       commondefine.h
+|   |       
+|   \---Release
+|       |   libProtocol.pch
+|       |   libProtocol.pdb
+|       |   libspeech_protocol.obj
+|       |   mblue_crc.obj
+|       |   mblue_fifo.obj
+|       |   mblue_hash.obj
+|       |   mblue_heap.obj
+|       |   pch.obj
+|       |   ProtocolLib.log
+|       |   protocol_manager.obj
+|       |   
+|       \---libProtocol.tlog
+|               CL.command.1.tlog
+|               CL.read.1.tlog
+|               CL.write.1.tlog
+|               Lib-link.read.1.tlog
+|               Lib-link.write.1.tlog
+|               Lib.command.1.tlog
+|               libProtocol.lastbuildstate
+|               
+\---Test
+    |   channel_left.pcm
+    |   cpp.hint
+    |   iflysmlogic.dll
+    |   MadaoMessage.cpp
+    |   MadaoMessage.h
+    |   mblue_crc.cpp
+    |   mblue_crc.h
+    |   mic-0.opus
+    |   mic-1.opus
+    |   pcm_test.pcm
+    |   record.pcm
+    |   Test.cpp
+    |   Test.sln
+    |   Test.vcxproj
+    |   Test.vcxproj.filters
+    |   Test.vcxproj.user
+    |   
+    +---include
+    |       dllPcmSinCheck.h
+    |       dllSpeechInterface.h
+    |       dllTestStruct.h
+    |       IflySm.h
+    |       libspeech_device_manager.h
+    |       libspeech_protocol.h
+    |       libspeech_voice.h
+    |       lib_device_define.h
+    |       lib_speech_usb.h
+    |       mspeech_framework.h
+    |       mspeech_pcm.h
+    |       mspeech_spp.h
+    |       mspeech_usb.h
+    |       mspeech_usb_manager.h
+    |       
+    +---libs
+    |       bleaudio_32.lib
+    |       libDecode.lib
+    |       libProtocol.lib
+    |       libUsb.lib
+    |       
+    \---Release
+        |   aiui.dll
+        |   dllSpeech.lib
+        |   dllUsb.dll
+        |   dllUsb.lib
+        |   iflybuilder.dll
+        |   iflycommon.dll
+        |   IflySm.dll
+        |   IflySm.lib
+        |   iflysmlogic.dll
+        |   iFlySpeechLogic.dll
+        |   libcurl.dll
+        |   libDecode.lib
+        |   libProtocol.lib
+        |   libProtocolFramework.lib
+        |   libSinCheck.dll
+        |   libSinCheck.lib
+        |   libUsb.lib
+        |   MadaoMessage.obj
+        |   mblue_crc.obj
+        |   msc.dll
+        |   mspeech_framework.dll
+        |   mspeech_framework.lib
+        |   mspeech_pcm.dll
+        |   mspeech_pcm.lib
+        |   mspeech_spp.dll
+        |   mspeech_spp.lib
+        |   mspeech_usb.dll
+        |   mspeech_usb.lib
+        |   mspeech_usb_manager.dll
+        |   mspeech_usb_manager.lib
+        |   pcm_file.pcm
+        |   Test.Build.CppClean.log
+        |   Test.exe
+        |   Test.log
+        |   Test.obj
+        |   Test.pdb
+        |   vc141.pdb
+        |   
+        +---esr
+        |   +---pproc
+        |   |   |   20180319_punc_local_srf_lrate0.5_pfile1_iter0_punc.bin
+        |   |   |   20180507_punc_local_eng_lrate0.5_pfile1_iter0_punc.bin
+        |   |   |   danzi_mix_ch_en.dict
+        |   |   |   newpunc_ch_en_with_vad.bin
+        |   |   |   newpunc_ch_en_with_vad_float.bin
+        |   |   |   pproc.cfg
+        |   |   |   ReplaceWordMapList.txt
+        |   |   |   replace_list.txt
+        |   |   |   SmoothList.txt
+        |   |   |   target_class.txt
+        |   |   |   
+        |   |   \---resource_2_0_12
+        |   |           number.gram
+        |   |           number_math_normal.dic
+        |   |           number_math_normal.gram
+        |   |           num_not_change_list
+        |   |           replace_list
+        |   |           
+        |   \---Res
+        |           EVAD_MID_LSTM_NF_SRF_cat3_FBN40_qrwang2_ad8a_20190415.bin
+        |           grammar.txt
+        |           LM_3gram_2pass_esr_add_pername.bin
+        |           mlp_vad_fixpoint.bin
+        |           rnnlm_fixpoint.bin
+        |           ubrnn_iter0_part3_fix_v4_wc_float_new_param.bin
+        |           wfst_align.bin
+        |           wfst_align_40_noblank_silopt_addphn.bin
+        |           
+        +---Iflytek.Windows.SmartMouse.Private
+        |       concrt140.dll
+        |       Iflytek.Windows.SmartMouse.Private.manifest
+        |       msvcp140.dll
+        |       vccorlib140.dll
+        |       vcruntime140.dll
+        |       
+        +---msc
+        |       1
+        |       base64.txt
+        |       common.jet
+        |       
+        +---pcm_tool
+        |       mspeech_framework.dll
+        |       mspeech_pcm.dll
+        |       mspeech_spp.dll
+        |       mspeech_usb.dll
+        |       Test.exe
+        |       
+        \---Test.tlog
+                CL.command.1.tlog
+                CL.read.1.tlog
+                CL.write.1.tlog
+                link.command.1.tlog
+                link.read.1.tlog
+                link.write.1.tlog
+                Test.lastbuildstate
+                

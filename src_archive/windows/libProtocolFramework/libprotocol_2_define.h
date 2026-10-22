@@ -1,0 +1,94 @@
+﻿/*
+ * @Author: xuhan
+ * @Date: 2020-02-07 16:39:51
+ * @LastEditors  : xuhan
+ * @LastEditTime : 2020-02-08 18:17:43
+ * @Description:
+ */
+#ifndef _LIBPROTOCOL_2_DEFINE_H_
+#define _LIBPROTOCOL_2_DEFINE_H_
+
+enum PROTOCOL_COMMAND
+{
+	COMMAND_HANDSHAKE = 0x0,
+	COMMAND_AUTHENTICATE = 0x1, // 授权验证
+	COMMAND_START_RECORD = 0x2,
+	COMMAND_STOP_RECORD = 0x3,
+	COMMAND_UPDATE_CONN_PARAM = 0x4,
+	COMMAND_SET_SLAVE_PROP = 0x5,
+	COMMAND_GET_SLAVE_PROP = 0x6,
+	COMMAND_WRITE_DATA = 0x7,
+	COMMAND_READ_DATA = 0x8,
+	COMMAND_EVENT = 0x9,
+	COMMAND_HEART_HEAT = 0xb,      //  心跳
+	COMMAND_SCAN = 0x41,            // 扫描ble外设
+	COMMAND_CONNECT = 0x42,         // 连接指定外设
+	COMMAND_SET_MASTER_PROP = 0x43, // 设置主机属性
+	COMMAND_GET_MASTER_PROP = 0x44, // 获取主机属性
+	COMMAND_MASTER_WRITE = 0x45,
+	COMMAND_MASTER_WRITE_RESP = 0x47,
+	COMMAND_MANUFACTURE_INSTRUCTION = 0x4a, // 产线指令集
+	COMMAND_ACK = 0x81,
+	//	COMMAND_DONGLE_RESP = 0x86, // dongle respond
+	COMMAND_ASYNC_DATA = 0xa0,
+};
+
+enum PROTOCOL_PROP_KEY
+{
+	PROP_KEY_HEART_HEAT,  //心跳
+	PROP_KEY_LANGUAGE = 0x1,
+	PROP_KEY_DPI = 0x2,
+	PROP_KEY_PRODUCT_NO = 0x3, // 产品系列编码
+	PROP_KEY_RECORD_CHANNEL_SIZE = 0x4,
+	PROP_KEY_VERSION_DONGLE = 0x5,
+	PROP_KEY_MAC_DONGLE = 0x6,
+	PROP_KEY_CLIENT_FINGER = 0x7,// 客户端设备指纹
+	PROP_KEY_PROTOCOL_VERSION = 0x8,// 设备协议版本号
+	PROP_KEY_VERSION_MOURSE = 0x9, // 设备版本号
+	PROP_KEY_MAC_MOURSE = 0xa, // 设备mac地址
+	PROP_KEY_BATTERY = 0xb, // 电池电量
+	PROP_KEY_FINGER = 0xc, // 设备指纹
+	PROP_KEY_IFLY_AUTHENTICATE = 0xd, // ifly授权
+	PROP_KEY_FORBID_AHTUENTICATE = 0xe, // 屏蔽鉴权
+	PROP_KEY_OS_TYPE = 0xf, // 操作系统类型
+	PROP_KEY_SLEEP_TIME = 0x10,//系统休眠时间
+	PROP_KEY_IFLY_INPUTMETHOD = 0x11,// 讯飞雨点开关
+	PROP_KEY_RGB = 0x12, // 设置RGB灯效
+	PROP_KEY_CUSTOM_KEY = 0x13, // 设置自定义按键
+	PROP_KEY_VIBRATION = 0x14, // 设置震动
+	PROP_KEY_GET_THEME = 0x15, // 获取主题颜色
+	PROP_KEY_SET_FLIP_PAGE = 0x16,
+	PROP_KEY_GET_FLIP_PAGE = 0x17,
+	PROP_KEY_SUBTITLE_STATUS = 0x18,
+	PROP_KEY_M610_WORK_MODE = 0x19,
+	PROP_KEY_DEVICE_CONNECTION_TYPE = 0x1a,
+	PROP_KEY_POLLING_RATE = 0x1b,
+	PROP_KEY_LED = 0x1c,//通电指示灯
+	PROP_KEY_BACKLIGHT = 0x1d,//T8灯光
+	PROP_KEY_LASER = 0x1e,//空鼠激光类型
+	PROP_KEY_SLAVE_DEVICE_VERSION = 0x1f,//获取从机版本
+	PROP_KEY_WHEEL_MODE = 0x20,//T8灯光版滚轮模式
+
+	ASR_VOLUME = 0x22,                                // 提示音量
+	HEART_RATE_TIME = 0x23,                                // 心跳时间
+	PLAY_ASR_PLAYER = 0x24,                        // ASR播报
+	PROP_ADAPTIVE_MODULATION = 0x25,            //自适应调频
+	PROP_LS_DEVICE_ID = 0x26,                 //聆思device id
+	PROP_LS_CHECK_SUM = 0x27,	                 //下发UTC时间戳
+	PROP_KEYBOARD_RGB
+
+};
+
+enum MANUFACTURE_INSTRUCTION_KEY {
+
+	INSTRUCTION_KEY_SINCHECK = 0x1,
+
+};
+
+enum PROTOCOL_OTA_KEY {
+	OTA_KEY_START = 1,
+	OTA_KEY_UPDATE = 2,
+	OTA_KEY_END = 3
+};
+
+#endif

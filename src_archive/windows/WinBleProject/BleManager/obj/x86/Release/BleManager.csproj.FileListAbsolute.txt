@@ -1,0 +1,11 @@
+C:\Users\andy\Desktop\WinBleProject\BleManager\bin\x86\Release\BleManager.dll
+C:\Users\andy\Desktop\WinBleProject\BleManager\bin\x86\Release\BleManager.pdb
+C:\Users\andy\Desktop\WinBleProject\BleManager\bin\x86\Release\BluetoothAdpater.dll
+C:\Users\andy\Desktop\WinBleProject\BleManager\bin\x86\Release\BluetoothLib.dll
+C:\Users\andy\Desktop\WinBleProject\BleManager\bin\x86\Release\Windows.Foundation.FoundationContract.winmd
+C:\Users\andy\Desktop\WinBleProject\BleManager\bin\x86\Release\Windows.Foundation.UniversalApiContract.winmd
+C:\Users\andy\Desktop\WinBleProject\BleManager\bin\x86\Release\Windows.winmd
+C:\Users\andy\Desktop\WinBleProject\BleManager\obj\x86\Release\BleManager.csproj.CoreCompileInputs.cache
+C:\Users\andy\Desktop\WinBleProject\BleManager\obj\x86\Release\BleManager.csproj.CopyComplete
+C:\Users\andy\Desktop\WinBleProject\BleManager\obj\x86\Release\BleManager.dll
+C:\Users\andy\Desktop\WinBleProject\BleManager\obj\x86\Release\BleManager.pdb
