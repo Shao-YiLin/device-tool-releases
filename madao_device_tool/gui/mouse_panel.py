@@ -666,10 +666,10 @@ class MousePanel(QWidget):
             self._on_disconnect.request_disconnect(self._dev.address)
 
     def _open_ota(self) -> None:
-        """打开固件升级对话框。"""
+        """打开固件升级对话框（非模态，升级期间不阻塞主窗口）。"""
         from ota_dialog import OtaDialog
-        self._ota_dialog = OtaDialog(self._dev, self._worker, parent=self)
-        self._ota_dialog.exec()
+        self._ota_dialog = OtaDialog([self._dev], self._worker)
+        self._ota_dialog.show()
 
     # ---- 辅助 ----
     def _safe_op(self, op_id: str, method_name: str, *args,

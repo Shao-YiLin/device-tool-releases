@@ -85,6 +85,10 @@ class ProtocolFrame:
     sequence: int
     cmd: int
     payload: bytes
+    # dongle 转发场景下标记来源子设备 mac（6 字节）；
+    # 直连 / 设备自身帧为 None。多个子设备共用一个 dongle 通道时，
+    # 靠它把应答帧隔离到各自设备，避免并发请求串台。
+    source_mac: Optional[bytes] = None
 
     @property
     def total_length(self) -> int:

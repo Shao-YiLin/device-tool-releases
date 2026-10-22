@@ -96,6 +96,9 @@ class UsbComm(BaseComm):
         # dongle 模式下当前附着的子设备 mac（用于 send_raw 包装）
         self._sub_macs: List[bytes] = []
         self._dongle_decoder = ProtocolDecoder()  # 解 dongle 上报的外层帧
+        # 写锁：dongle 下多个子设备并发发送（如并发 OTA）时，
+        # 串行化 USB 写，防止两帧在总线上交错导致协议错乱。
+        self._tx_lock = threading.Lock()
 
     # ---- 扫描 ----
     def scan(self) -> None:
@@ -310,6 +313,9 @@ class UsbComm(BaseComm):
             inner = bytes(p[7:])
             if inner:
                 for frame in parse_frames(inner):
+                    # 标记来源子设备：多子设备共用一个 dongle 时，
+                    # 上层据此把应答隔离到各自设备（并发升级必需）。
+                    frame.source_mac = mac
                     if self.on_frame:
                         self.on_frame(frame)
         elif outer.cmd == UsbManagerCommand.SCAN_DEVICE:
@@ -340,6 +346,8 @@ class UsbComm(BaseComm):
         # inner 可能是子设备发的私有协议帧（透传）
         if inner:
             for frame in parse_frames(inner):
+                # 标记来源子设备（见 WRITE_DATA_RESP 分支说明）
+                frame.source_mac = mac
                 if self.on_frame:
                     self.on_frame(frame)
 
@@ -471,7 +479,9 @@ class UsbComm(BaseComm):
         _log.debug("USB TX %d bytes: %s", len(data), data.hex())
         dev = self._dev
         try:
-            written = dev.write(self._ep_out, data, timeout=USB_TIMEOUT_MS)
+            # 写锁：并发升级时多个子设备的帧不能交错到同一次 USB 写里
+            with self._tx_lock:
+                written = dev.write(self._ep_out, data, timeout=USB_TIMEOUT_MS)
             return int(written)
         except Exception as e:
             _log.warning(

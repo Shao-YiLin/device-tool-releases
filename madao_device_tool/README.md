@@ -44,7 +44,8 @@ madao_device_tool/
 │   ├── test_device_model.py  设备模型请求-应答（13项）
 │   ├── test_device_mgr.py    设备管理器（8项）
 │   ├── test_keyboard.py      键盘专属功能（10项）
-│   └── test_device_config.py 设备配置识别（10项）
+│   ├── test_device_config.py 设备配置识别（10项）
+│   └── test_ota_multi_device.py 多设备并发 OTA（7项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
 ├── logging_config.py      日志配置
@@ -86,6 +87,8 @@ python madao_device_tool/test/test_device_model.py
 python madao_device_tool/test/test_device_mgr.py
 python madao_device_tool/test/test_keyboard.py
 python madao_device_tool/test/test_device_config.py
+python madao_device_tool/test/test_dongle_sub_sync.py
+python madao_device_tool/test/test_ota_multi_device.py
 ```
 
 ## 使用方式
@@ -162,6 +165,23 @@ pyusb 需要 libusb 后端。Windows 下：
 - 录音指令发送（音频数据通过 on_audio 回调上抛）
 - **鉴权握手完整实现**（AES-128-ECB + MD5 + sdbm hash + 4 阶段加密交换）
 - **OTA 升级完整实现**（固件 AES-128-ECB 加密 + 32 字节分片 + CRC 校验 + 进度回调）
+- **多设备并发 OTA 升级**（非模态升级窗口，多台设备各自独立进度/日志，后台并发执行）
+
+## 多设备并发 OTA 升级
+
+升级窗口不再阻塞主窗口，可在升级期间继续连接新设备、发起第二批升级。
+
+使用方式：
+- **批量升级**：主窗口底部「批量固件升级」按钮（或 工具 → 批量固件升级）→ 打开批量升级窗口，
+  窗口内每台设备一行（勾选 + 独立选择固件 + 独立进度条与状态），点「开始升级」后各设备并发升级。
+  固件可「应用到全部」，也可逐台单独指定（不同型号不要用同一份固件）。
+- **单设备升级**：鼠标/键盘面板里的「固件升级」按钮，打开同样的窗口（只含当前设备），非模态。
+
+并发安全要点（多子设备共用一个接收器时尤其重要）：
+- dongle 转发的子设备应答帧带 `source_mac`，各子设备的 adapter 按 mac 隔离应答，
+  避免并发请求的 ACK 串台（各设备的 sequence 计数独立、会撞号）。
+- `UsbComm` 写端加锁串行化，多个子设备并发发送时 USB 写不会交错。
+- 同一台设备不允许被两个升级任务同时升级（全局登记正在升级的设备）。
 
 真机验证（三类通道 + 多设备同时管理）：
 - **USB 直连鼠标**（M610 Ultra, product_no=1042）：扫描/连接/CPI/回报率/battery/鉴权 全通过

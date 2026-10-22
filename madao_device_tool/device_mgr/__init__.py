@@ -53,17 +53,19 @@ class _DongleSubCommAdapter(BaseComm):
     def install_frame_router(self):
         """把 dongle 的帧按 mac 路由到本 adapter。
 
-        实现策略：dongle 的 _dispatch_dongle_event / _dispatch_dongle_scan 已经
-        把内层私有帧通过 on_frame 上抛；但多个子设备的帧都会进同一个回调。
-        真实场景下上层 device 已通过 send_and_wait 的 sequence 匹配 ACK，
-        所以即便多个子设备共用一个 on_frame 也能正确分发（sequence 唯一）。
-        因此本 adapter 不再额外过滤，直接桥接 dongle.on_frame。
+        dongle 的 _handle_dongle_frame 把子设备内层私有帧上抛时，
+        已在帧上打上 source_mac（来源子设备 mac）。本 adapter 只接收
+        属于自己 mac 的帧——多个子设备共用一个 dongle 时，各设备的
+        sequence 计数是各自独立的（会撞号），必须按 mac 隔离，
+        否则并发请求（如并发 OTA）的 ACK 会串到别的设备上。
         """
         if self._installed:
             return
         parent_on_frame = self._dongle.on_frame
 
         def _route(frame):
+            if frame.source_mac is not None and frame.source_mac != self._mac:
+                return  # 别的子设备的帧，丢弃
             if self.on_frame:
                 self.on_frame(frame)
 

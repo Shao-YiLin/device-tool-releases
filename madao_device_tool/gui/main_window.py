@@ -104,8 +104,11 @@ class MainWindow(QMainWindow):
         self.act_key_custom.triggered.connect(self._open_key_custom)
         self.act_audio_convert = QAction("录音格式转换", self)
         self.act_audio_convert.triggered.connect(self._open_audio_convert)
+        self.act_batch_ota = QAction("批量固件升级(&O)...", self)
+        self.act_batch_ota.triggered.connect(self._open_batch_ota)
         menu_tools.addAction(self.act_key_custom)
         menu_tools.addAction(self.act_audio_convert)
+        menu_tools.addAction(self.act_batch_ota)
         menu_bar.addMenu(menu_tools)
 
         central = QWidget()
@@ -160,14 +163,19 @@ class MainWindow(QMainWindow):
         bottom_bar.addStretch(1)
         self.btn_refresh = QPushButton("刷新设备池")
         self.btn_scan = QPushButton("扫描设备")
+        self.btn_batch_ota = QPushButton("批量固件升级")
+        self.btn_batch_ota.setToolTip("对多台已连接设备并发升级固件")
+        self.btn_batch_ota.clicked.connect(self._open_batch_ota)
         big_btn_style = (
             "QPushButton { font-size: 13px; padding: 5px 14px; "
             "min-height: 18px; min-width: 80px; }"
         )
         self.btn_refresh.setStyleSheet(big_btn_style)
         self.btn_scan.setStyleSheet(big_btn_style)
+        self.btn_batch_ota.setStyleSheet(big_btn_style)
         bottom_bar.addWidget(self.btn_refresh)
         bottom_bar.addWidget(self.btn_scan)
+        bottom_bar.addWidget(self.btn_batch_ota)
         outer_layout.addLayout(bottom_bar)
 
         self.setCentralWidget(central)
@@ -324,6 +332,20 @@ class MainWindow(QMainWindow):
         from audio_convert_dialog import AudioConvertDialog
         self._audio_convert_dialog = AudioConvertDialog(self)
         self._audio_convert_dialog.exec()
+
+    def _open_batch_ota(self) -> None:
+        """打开批量固件升级对话框：对所有已连接设备并发升级。
+
+        对话框非模态，升级期间主窗口仍可操作（可继续连接新设备、
+        再发起第二批升级）。
+        """
+        from ota_dialog import OtaDialog
+        devices = list(self._connected.values())
+        if not devices:
+            QMessageBox.information(self, "提示", "当前没有已连接的设备。")
+            return
+        self._ota_dialog = OtaDialog(devices, self._worker, parent=self)
+        self._ota_dialog.show()
 
     # ---- 录音菜单 ----
     def _on_toggle_save_record(self, checked: bool) -> None:
