@@ -46,6 +46,7 @@ madao_device_tool/
 │   ├── test_keyboard.py      键盘专属功能（10项）
 │   ├── test_device_config.py 设备配置识别（10项）
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
+│   ├── test_slave_version.py 从机版本号接口（7项）
 │   └── test_passive_disconnect.py 设备被动断开自动刷新（8项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
@@ -124,7 +125,7 @@ python madao_device_tool/cli.py set-cpi 4:9 3
 python madao_device_tool/demo_connect_mouse.py
 ```
 
-### 已验证（USB 直连，M610 Ultra 鼠标）
+### 已验证（USB 直连，AM60 鼠标）
 
 实测通过：扫描、连接（自动探测 EP_OUT=0x04）、product_no、mac、version、battery、
 CPI（get/set）、回报率（get/set）、handshake。详见 `demo_connect_mouse.py` 输出。
@@ -168,6 +169,23 @@ pyusb 需要 libusb 后端。Windows 下：
 - **OTA 升级完整实现**（固件 AES-128-ECB 加密 + 32 字节分片 + CRC 校验 + 进度回调）
 - **多设备并发 OTA 升级**（非模态升级窗口，多台设备各自独立进度/日志，后台并发执行）
 - **设备被动断开自动刷新**（USB 拔出 / BLE 掉线时设备列表自动移除，无需手动刷新）
+- **从机版本号读取**（AM60 鼠标 / AT80 键盘，GET_SLAVE_PROP[0x1F]）
+
+## 从机版本号
+
+带从机的设备（AM60 鼠标、AT80 键盘）可以通过通用属性通道读取从机固件版本：
+
+```python
+from devtool import DeviceTool
+tool = DeviceTool()
+dev = tool.connect(tool.scan_usb()[0])   # 或 tool.connect_ble_bonded(mac, device_type=0x32)
+for device_id, version in dev.get_slave_device_version():
+    print(hex(device_id), ".".join(str(b) for b in version.to_bytes(4, "little")))
+```
+
+- 指令：`GET_SLAVE_PROP`，payload = `[0x1F]`（`PropKey.SLAVE_DEVICE_VERSION`）
+- 应答：n 组「2 字节从机设备号 + 4 字节版本号」（小端），版本号按字节展开为 `x.y.z.w`
+- 界面：鼠标面板「AM60 专属」、键盘面板「AT80 专属」分组内的「从机版本号 读取」按钮
 
 ## 多设备并发 OTA 升级
 
@@ -186,7 +204,7 @@ pyusb 需要 libusb 后端。Windows 下：
 - 同一台设备不允许被两个升级任务同时升级（全局登记正在升级的设备）。
 
 真机验证（三类通道 + 多设备同时管理）：
-- **USB 直连鼠标**（M610 Ultra, product_no=1042）：扫描/连接/CPI/回报率/battery/鉴权 全通过
+- **USB 直连鼠标**（AM60, product_no=1042）：扫描/连接/CPI/回报率/battery/鉴权 全通过
 - **多联接收器+T8 键盘**（Madao Device dongle, product_no=3007）：GET_CONNECTED_DEVICE/attach/透传指令/基础信息/鉴权 全通过
 - **BLE 鼠标**（FeiShu_S, product_no=1018）：连接/product_no/mac/battery/CPI/鉴权 全通过
 - **多设备同时管理**：USB 直连 + dongle 子设备 + BLE 三种通道并存，设备池统一管理

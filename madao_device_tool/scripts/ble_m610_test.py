@@ -1,4 +1,4 @@
-"""连接 M610 Ultra 并打印 product_no 等基础信息。"""
+"""连接 AM60 并打印 product_no 等基础信息。"""
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,7 +12,7 @@ def main():
     tool = DeviceTool()
     try:
         # 默认按鼠标连接
-        dev = tool.connect_ble_bonded(MAC, device_type=0x31, name="M610 Ultra")
+        dev = tool.connect_ble_bonded(MAC, device_type=0x31, name="AM60")
         print("device type:", type(dev).__name__)
         print("connected:", dev.is_connected)
         pn = dev.get_product_no()

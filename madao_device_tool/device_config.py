@@ -69,7 +69,7 @@ _DEVICES: Dict[str, Dict] = {
     "1039": {"name": "M110", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "1040": {"name": "M111", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "1041": {"name": "M111 Spark", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
-    "1042": {"name": "M610 Ultra", "type": "mouse", "image": "M610_Ultra.png", "capabilities": list(_MOUSE_CAPS)},
+    "1042": {"name": "AM60", "type": "mouse", "image": "am60_black.png", "capabilities": list(_MOUSE_CAPS)},
     "1043": {"name": "AM50", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "1044": {"name": "AM50 Pro", "type": "mouse", "image": "am50_white.png", "capabilities": list(_MOUSE_CAPS)},
     "1045": {"name": "AM50", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
@@ -140,12 +140,12 @@ _DEVICES: Dict[str, Dict] = {
     "9012": {"name": "M320", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
 }
 
-# 支持 RGB 灯光的鼠标 product_no 集合（G50 / AM40 / AM50 系列 / M610 Ultra）
+# 支持 RGB 灯光的鼠标 product_no 集合（G50 / AM40 / AM50 系列 / AM60）
 _LIGHT_MOUSE_PRODUCT_NOS = {
     "1011",  # G50
     "1018",  # AM40
     "1023", "1028", "1031", "1032", "1043", "1044", "1045", "1047",  # AM50 系列
-    "1042",  # M610 Ultra
+    "1042",  # AM60
     "1049",  # AM40（另一 SKU）
 }
 

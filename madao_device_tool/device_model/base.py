@@ -274,6 +274,26 @@ class BaseDevice:
             raise DeviceError(f"获取 protocol_version 失败 err={err}")
         return bytes_to_u32(data[:4])
 
+    def get_slave_device_version(self) -> list:
+        """获取从机版本号（AM60 鼠标 / AT80 键盘等带从机的设备）。
+
+        cmd=GET_SLAVE_PROP, payload=[SLAVE_DEVICE_VERSION(0x1F)]
+        应答格式：n * (2 字节从机设备号 + 4 字节版本号)，小端。
+        例如 610 返回 [(0x0002, 0x0D000001)] 表示设备号 2、版本 1.0.0.13。
+        返回 [(device_id, version), ...]。
+        """
+        err, data = self._get_slave_prop(PropKey.SLAVE_DEVICE_VERSION)
+        if err != ErrCode.SUCCESS or len(data) < 6:
+            raise DeviceError(f"获取从机版本号失败 err={err} data={data.hex()}")
+        if len(data) % 6 != 0:
+            raise DeviceError(f"从机版本号应答长度异常: len={len(data)} data={data.hex()}")
+        result = []
+        for i in range(0, len(data), 6):
+            dev_id = int.from_bytes(data[i:i + 2], "little")
+            ver = bytes_to_u32(data[i + 2:i + 6])
+            result.append((dev_id, ver))
+        return result
+
     def handshake(self) -> int:
         """握手。
 

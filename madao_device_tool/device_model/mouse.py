@@ -77,7 +77,7 @@ class MouseDevice(BaseDevice):
         return bytes_to_u32(data[:4])
 
     def set_quick_transfer(self, enabled: bool) -> int:
-        """设置 M610 Ultra FTP 快传开关。
+        """设置 AM60 FTP 快传开关。
 
         对齐马道设备通信协议.docx 2026/01/17:
           cmd=SET_SLAVE_PROP, payload=[0x2A][value(1)]
@@ -90,7 +90,7 @@ class MouseDevice(BaseDevice):
         return err
 
     def get_unsynced_file_count(self) -> int:
-        """获取 M610 Ultra 未同步文件数量。
+        """获取 AM60 未同步文件数量。
 
         对齐马道设备通信协议.docx 2026/01/17:
           cmd=GET_SLAVE_PROP, payload=[0x29]
@@ -103,7 +103,7 @@ class MouseDevice(BaseDevice):
             raise DeviceError(f"未同步文件数量应答长度不足: {len(data)}")
         return bytes_to_u32(data[:4])
 
-    # ---- RGB 灯光（仅 G50 / AM40 / AM50 系列 / M610 Ultra 支持） ----
+    # ---- RGB 灯光（仅 G50 / AM40 / AM50 系列 / AM60 支持） ----
     def get_rgb_theme(self) -> Tuple[int, int, int, int]:
         """获取当前 RGB 主题颜色与模式。
 
@@ -154,7 +154,7 @@ class MouseDevice(BaseDevice):
         return bytes_to_u32(data[:4])
 
     def get_touch_sensitivity(self) -> int:
-        """获取触摸滚动灵敏度（M610 Ultra 专属）。
+        """获取触摸滚动灵敏度（AM60 专属）。
 
         cmd=GET_SLAVE_PROP, payload=[TOUCH_SENSITIVITY(0x2B)]
         应答 4 字节 LE，范围 1~10。
@@ -165,7 +165,7 @@ class MouseDevice(BaseDevice):
         return bytes_to_u32(data[:4])
 
     def set_touch_sensitivity(self, value: int) -> int:
-        """设置触摸滚动灵敏度（M610 Ultra 专属）。
+        """设置触摸滚动灵敏度（AM60 专属）。
 
         cmd=SET_SLAVE_PROP, payload=[TOUCH_SENSITIVITY(0x2B)][value(4 LE)]
         value 范围 1~10，超出设备返回失败。
@@ -175,26 +175,8 @@ class MouseDevice(BaseDevice):
             raise DeviceError(f"设置触摸灵敏度失败 err={err}")
         return err
 
-    def get_slave_device_version(self) -> list[tuple[int, int]]:
-        """获取从机版本号（M610 Ultra 专属）。
-
-        cmd=GET_SLAVE_PROP, payload=[SLAVE_DEVICE_VERSION(0x1F)]
-        应答格式：n * (2 字节从机设备号 + 4 字节版本号)，小端。
-        例如 610 返回 [(0x0002, 0x0D000001)] 表示设备号 2、版本 1.0.0.13。
-        返回 [(device_id, version), ...]。
-        """
-        err, data = self._get_slave_prop(PropKey.SLAVE_DEVICE_VERSION)
-        if err != ErrCode.SUCCESS or len(data) < 6:
-            raise DeviceError(f"获取从机版本号失败 err={err}")
-        result = []
-        for i in range(0, len(data) - len(data) % 6, 6):
-            dev_id = int.from_bytes(data[i:i+2], "little")
-            ver = bytes_to_u32(data[i+2:i+6])
-            result.append((dev_id, ver))
-        return result
-
     def set_slave_screen_sleep(self, seconds: int) -> int:
-        """设置从机屏幕休眠时间（M610 Ultra 专属）。
+        """设置从机屏幕休眠时间（AM60 专属）。
 
         cmd=SET_SLAVE_PROP, payload=[SLAVE_SCREEN_SLEEP(0x2C)][seconds(4 LE)]
         seconds 为休眠秒数。
@@ -205,7 +187,7 @@ class MouseDevice(BaseDevice):
         return err
 
     def get_slave_screen_sleep(self) -> int:
-        """获取从机屏幕休眠时间（M610 Ultra 专属，秒）。
+        """获取从机屏幕休眠时间（AM60 专属，秒）。
 
         cmd=GET_SLAVE_PROP, payload=[SLAVE_SCREEN_SLEEP(0x2C)]
         应答 4 字节 LE 秒数。

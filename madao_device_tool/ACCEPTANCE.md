@@ -2,7 +2,7 @@
 
 > 对齐 `doc/refactor_requirement.md` 第 3 节"自动化验收标准"。
 > 每条标注：达标状态 / 实现位置 / 证据 / 遗留。
-> 真机验证环境：Windows + M610 Ultra 鼠标（USB 直连）+ T8 键盘（BLE，Windows 已配对）。
+> 真机验证环境：Windows + AM60 鼠标（USB 直连）+ T8 键盘（BLE，Windows 已配对）。
 
 ## 命名变更说明
 
@@ -70,7 +70,7 @@
 
 ### [✅] 基础信息字段：product_no、name、mac 可正常读写解析
 - 实现：`base.py::get_product_no` / `get_device_mac`；name 为构造参数。
-- 真机证据：M610 → product_no=`b'1042'`、mac=`05:1a:2b:3c:49:ff`；T8 → product_no=`b'3007'`、mac=`2c:81:a7:10:49:ff`。
+- 真机证据：AM60 → product_no=`b'1042'`、mac=`05:1a:2b:3c:49:ff`；T8 → product_no=`b'3007'`、mac=`2c:81:a7:10:49:ff`。
 - 测试：`test_device_model.py::test_get_device_mac`。
 
 ### [✅] BaseDevice 内置录音、OTA 升级通用方法，鼠标/键盘无需重复实现
@@ -102,7 +102,7 @@
 - 实现：`device_mgr::_make_device` 按 `DeviceInfo.device_type`（0x31 鼠标 / 0x32 键盘）创建对应子类。
 - 注：USB 扫描的 device_type 来自 `bcdDevice>>8`（当前实测均为 0x1，不能区分键鼠），
   BLE 扫描 device_type 暂未从广播包解析（多数设备广播包不含此字段）。
-  真机区分靠 product_no（M610=1042/鼠标，T8=3007/键盘）或连接后读取 device 信息判定。
+  真机区分靠 product_no（AM60=1042/鼠标，T8=3007/键盘）或连接后读取 device 信息判定。
 - 测试：`test_connect_creates_keyboard_for_kb_type`、`test_connect_ble_creates_mouse_for_mouse_type`。
 
 ### [✅] 支持根据 Mac/ProductNo 精准连接指定设备
@@ -173,7 +173,7 @@
 
 | 链路 | 设备 | 通过项 |
 |------|------|--------|
-| USB 直连 | M610 Ultra 鼠标 | 扫描/连接/EP探测/product_no/mac/version/battery/CPI读写/回报率读写/handshake |
+| USB 直连 | AM60 鼠标 | 扫描/连接/EP探测/product_no/mac/version/battery/CPI读写/回报率读写/handshake |
 | BLE（WinrtBleComm）| T8 键盘 | 连接（复用 Windows bonding）/product_no/mac/version/battery/protocol_version/handshake |
 | 单元测试 | Mock 通道 | 39/39（协议帧、CRC32C 标准向量、流式解码、请求-应答状态机、多设备池）|
 

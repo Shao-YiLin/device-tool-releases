@@ -223,6 +223,11 @@ class KeyboardPanel(QWidget):
         # 滚轮功能（按 capabilities 动态显示）
         self._wheel_group = self._build_wheel_group()
         root.addWidget(self._wheel_group)
+
+        # AT80 专属（按 product_no 动态显示）
+        self._at80_group = self._build_at80_group()
+        self._at80_group.setVisible(False)
+        root.addWidget(self._at80_group)
         root.addStretch()
 
         # 默认全部显示；product_no 读到后再按 capabilities 调整
@@ -260,6 +265,11 @@ class KeyboardPanel(QWidget):
         for w in (self._rgb_mode_group, self._rgb_brightness_group, self._rgb_speed_group):
             w.setVisible(has_rgb)
         self._wheel_group.setVisible(has_wheel)
+        # AT80 (product_no == "3007") 才显示专属功能，并主动读取一次从机版本号
+        is_at80 = (pn_str == "3007")
+        self._at80_group.setVisible(is_at80)
+        if is_at80:
+            self._read_slave_device_version()
 
     def _build_info_group(self) -> QGroupBox:
         g = QGroupBox("基础信息")
@@ -352,6 +362,19 @@ class KeyboardPanel(QWidget):
         h.addStretch()
         return g
 
+    def _build_at80_group(self) -> QGroupBox:
+        """AT80 专属：从机版本号读取。"""
+        g = QGroupBox("AT80 专属")
+        h = QHBoxLayout(g)
+        h.addWidget(QLabel("从机版本号:"))
+        self.btn_slave_ver_read = QPushButton("读取")
+        self.lbl_slave_version = QLabel("-")
+        self.btn_slave_ver_read.clicked.connect(self._read_slave_device_version)
+        h.addWidget(self.btn_slave_ver_read)
+        h.addWidget(self.lbl_slave_version)
+        h.addStretch()
+        return g
+
     # ---- 图片自适应 ----
     def _rescale_image(self) -> None:
         if self._current_pixmap and not self._current_pixmap.isNull():
@@ -426,6 +449,22 @@ class KeyboardPanel(QWidget):
     def _set_wheel(self) -> None:
         self._safe_op("set_wheel_function", "set_wheel_function",
                       self.sp_wheel.value())
+
+    def _read_slave_device_version(self) -> None:
+        def _on_ver(items: list):
+            if not items:
+                self.lbl_slave_version.setText("无")
+                self._log("从机版本号: 无")
+                return
+            parts = []
+            for dev_id, ver in items:
+                # 2 字节设备号 = [类型(高字节)][索引(低字节)]
+                t = (dev_id >> 8) & 0xFF
+                idx = dev_id & 0xFF
+                parts.append(f"类型{t}#索引{idx}:{_format_version(ver)}")
+            self.lbl_slave_version.setText("; ".join(parts))
+            self._log("从机版本号: " + ", ".join(parts))
+        self._safe_op("get_slave_device_version", "get_slave_device_version", on_ok=_on_ver)
 
     def _auth(self) -> None:
         self._safe_op("authenticate", "authenticate",

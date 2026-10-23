@@ -238,10 +238,10 @@ class MousePanel(QWidget):
         top_row.addWidget(self.lbl_image, 2)  # stretch=2，图片占右半边
         root.addLayout(top_row)
 
-        # M610 Ultra 专属功能（动态显隐）
-        self._m610_ultra_group = self._build_m610_ultra_group()
-        self._m610_ultra_group.setVisible(False)
-        root.addWidget(self._m610_ultra_group)
+        # AM60 专属功能（动态显隐）
+        self._am60_group = self._build_am60_group()
+        self._am60_group.setVisible(False)
+        root.addWidget(self._am60_group)
         root.addStretch()
 
     def _build_action_column(self) -> QVBoxLayout:
@@ -348,9 +348,9 @@ class MousePanel(QWidget):
         self._current_light_color = QColor(255, 255, 255)
         return g
 
-    def _build_m610_ultra_group(self) -> QGroupBox:
-        """M610 Ultra 专属：FTP 快传开关 + 未同步文件数 + 工作模式 + 触摸灵敏度。"""
-        g = QGroupBox("M610 Ultra 专属")
+    def _build_am60_group(self) -> QGroupBox:
+        """AM60 专属：FTP 快传开关 + 未同步文件数 + 工作模式 + 触摸灵敏度 + 从机版本号。"""
+        g = QGroupBox("AM60 专属")
         v = QVBoxLayout(g)
 
         # 第一行：快传 + 未同步 + 工作模式
@@ -469,10 +469,10 @@ class MousePanel(QWidget):
             self._dev.name = name
             if self._on_name_changed:
                 self._on_name_changed()
-            # M610 Ultra (product_no == "1042") 才显示专属功能，并主动获取工作模式
-            is_m610_ultra = (pn_str == "1042")
-            self._m610_ultra_group.setVisible(is_m610_ultra)
-            if is_m610_ultra:
+            # AM60 (product_no == "1042") 才显示专属功能，并主动获取工作模式
+            is_am60 = (pn_str == "1042")
+            self._am60_group.setVisible(is_am60)
+            if is_am60:
                 self._get_work_mode()
                 self._read_touch_sensitivity()
                 self._read_slave_device_version()
