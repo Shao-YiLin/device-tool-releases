@@ -173,8 +173,8 @@ class MainWindow(QMainWindow):
         )
         self.btn_scan.setStyleSheet(big_btn_style)
         self.btn_batch_ota.setStyleSheet(big_btn_style)
-        bottom_bar.addWidget(self.btn_scan)
         bottom_bar.addWidget(self.btn_batch_ota)
+        bottom_bar.addWidget(self.btn_scan)
         outer_layout.addLayout(bottom_bar)
 
         self.setCentralWidget(central)
