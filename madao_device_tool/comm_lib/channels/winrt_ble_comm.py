@@ -16,6 +16,7 @@ UUID（对齐 T8_light/AM50 C 源码 AAA_app_att.c）：
 from __future__ import annotations
 
 import asyncio
+import logging
 import threading
 from typing import Optional
 
@@ -29,6 +30,8 @@ from .ble_comm import (
     FFE0_NOTIFY_CHAR_UUID,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def _mac_str_to_int(address: str) -> int:
     """'FF:49:B0:A7:81:2C' -> 0xFF49B0A7812C"""
@@ -41,6 +44,9 @@ class WinrtBleComm(BaseComm):
     构造后用 connect(mac_str_or_int) 指定设备蓝牙地址，
     地址可从 Windows 设备管理器 BTHLE\\DEV_xxxxx 条目获取。
     """
+
+    # 掉线看门狗轮询间隔（秒）
+    WATCHDOG_INTERVAL_SEC = 1.0
 
     def __init__(self, uuid_set: str = "telink") -> None:
         super().__init__()
@@ -70,6 +76,9 @@ class WinrtBleComm(BaseComm):
         self._notify_char = None
         self._notify_token = None
         self._running = threading.Event()
+        # 掉线看门狗：设备被动掉线（关机/离开范围）时 notify 静默停止，
+        # 若无人检测，上层永远收不到断开通知（GUI 也就不会刷新）。
+        self._watchdog_stop = threading.Event()
 
     # ---- 后台事件循环 ----
     def _start_loop(self):
@@ -126,6 +135,8 @@ class WinrtBleComm(BaseComm):
         except Exception as e:
             self._stop_loop()
             raise CommError(f"BLE 连接失败: {e}") from e
+        # 连接成功后启动掉线看门狗
+        self._start_watchdog()
 
     async def _async_connect(self, addr: int):
         # 兼容 bleak 0.22（bleak_winrt.*）和 bleak 3.0+（winrt.windows.*）
@@ -228,7 +239,45 @@ class WinrtBleComm(BaseComm):
         except Exception:
             pass
 
+    # ---- 掉线看门狗 ----
+    def _start_watchdog(self) -> None:
+        self._watchdog_stop.clear()
+        t = threading.Thread(target=self._watchdog_loop, name="ble-watchdog", daemon=True)
+        t.start()
+
+    def _stop_watchdog(self) -> None:
+        self._watchdog_stop.set()
+
+    def _watchdog_loop(self) -> None:
+        while not self._watchdog_stop.wait(self.WATCHDOG_INTERVAL_SEC):
+            if not self._check_connection_alive():
+                return
+
+    def _check_connection_alive(self) -> bool:
+        """检查 GATT 连接是否存活；发现被动掉线则触发断开通知。
+
+        返回 False 表示看门狗应退出（已掉线并通知 / 设备已被主动关闭）。
+        注意：只捕获"读状态"的异常；断开通知的回调异常不在此吞掉。
+        """
+        if self._device is None:
+            return False  # 已被主动 disconnect 清理，无需通知
+        try:
+            status = getattr(self._device, "connection_status", None)
+            if status is None:
+                return True  # 后端不暴露该属性，无法检测
+            name = getattr(status, "name", None) or str(status)
+            # BluetoothConnectionStatus: Connected=0, Disconnected=1
+            disconnected = name.endswith("Disconnected") or int(status) == 1
+        except Exception:
+            return True  # 属性偶发不可用，下一轮再查
+        if disconnected:
+            logger.info("BLE 连接已断开（看门狗检测到设备掉线）")
+            self._notify_disconnected()
+            return False
+        return True
+
     def disconnect(self) -> None:
+        self._watchdog_stop.set()  # 先停看门狗，避免与主动断开互相触发
         if self._notify_char is not None and self._notify_token is not None:
             try:
                 self._run_async(self._async_unsubscribe(), timeout=5.0)

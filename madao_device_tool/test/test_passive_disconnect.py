@@ -120,6 +120,116 @@ def test_main_window_auto_refresh_on_passive_disconnect():
         w.close()
 
 
+def test_dongle_sub_disconnect_event_notifies():
+    """dongle 上报子设备掉线事件（0x02）：从 _sub_macs 移除并触发回调。"""
+    from comm_lib.channels.usb_comm import UsbComm
+
+    comm = UsbComm()
+    mac = bytes.fromhex("aabbccddeeff")
+    comm._sub_macs = [mac]
+    got = []
+    comm.on_subdevice_disconnected = got.append
+
+    comm._dispatch_dongle_event(0x02, 0x00, mac, b"")
+
+    assert mac not in comm._sub_macs
+    assert got == [mac], "子设备掉线应触发 on_subdevice_disconnected"
+
+
+def test_device_mgr_wires_sub_disconnect_to_drop():
+    """connect_dongle_only 建立的 dongle 应把子设备掉线接到 drop_dongle_sub。"""
+    from unittest.mock import patch
+
+    mgr = DeviceManager()
+    with patch("device_mgr.UsbComm") as _:
+        info = type("I", (), {
+            "transport": "usb", "address": "1:2", "name": "",
+            "product_no": None, "device_type": 2, "extra": {},
+        })()
+        mgr.connect_dongle_only(info)
+
+    assert mgr._dongle is not None
+    assert mgr._dongle.on_subdevice_disconnected == mgr.drop_dongle_sub, \
+        "dongle 的子设备掉线回调应指向 drop_dongle_sub"
+
+
+def test_winrt_watchdog_detects_ble_disconnect():
+    """WinrtBleComm 看门狗：GATT Disconnected 应触发断开通知。"""
+    try:
+        from comm_lib.channels.winrt_ble_comm import WinrtBleComm
+    except Exception as e:
+        print(f"SKIP: winrt 后端不可用（{e}），跳过")
+        return
+
+    comm = WinrtBleComm()
+    fired = []
+    # BaseComm.on_disconnected 是无参回调（设备层用 lambda 包装地址）
+    comm.on_disconnected = lambda: fired.append(1)
+
+    # Disconnected（BluetoothConnectionStatus.Disconnected = 1）
+    comm._device = MagicMock()
+    comm._device.connection_status = 1
+    assert comm._check_connection_alive() is False, "掉线后看门狗应退出"
+    assert len(fired) == 1, "掉线应触发一次断开通知"
+
+    # Connected（= 0）：存活，不触发
+    fired.clear()
+    comm._device.connection_status = 0
+    assert comm._check_connection_alive() is True
+    assert fired == []
+
+    # 设备已被主动关闭（_device=None）：静默退出，不误触发
+    comm._device = None
+    assert comm._check_connection_alive() is False
+    assert fired == []
+
+
+def test_gui_refresh_via_comm_notify_chain():
+    """端到端：comm._notify_disconnected -> mgr 清池 -> GUI 自动刷新。"""
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    try:
+        from PySide6.QtWidgets import QApplication
+    except ImportError:
+        print("SKIP: PySide6 未安装，跳过 GUI 用例")
+        return
+
+    gui_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "gui")
+    if gui_dir not in sys.path:
+        sys.path.insert(0, gui_dir)
+
+    app = QApplication.instance() or QApplication([])
+    from main_window import MainWindow
+    from comm_lib.channels.usb_comm import UsbComm
+
+    class FakeDev:
+        def __init__(s, address, name):
+            s.address = address
+            s.name = name
+            s.transport = "usb"
+            s.connection_type = "usb_direct"
+
+    w = MainWindow()
+    try:
+        dev = FakeDev("04:cc", "设备C")
+        w._connected[dev.address] = dev
+        w._rebuild_list()
+        assert w.lst_devices.count() == 1
+
+        # 模拟通道层检测到掉线（USB 拔出 / BLE 看门狗触发的同一条入口）
+        comm = UsbComm()
+        comm.on_disconnected = lambda: w._tool._mgr._on_device_disconnected(dev.address)
+        w._tool._mgr._register(MagicMock(), dev.address)
+        comm._notify_disconnected()
+        app.processEvents()
+
+        assert dev.address not in w._connected, "GUI 应自动移除断开的设备"
+        names = [w.lst_devices.item(i).data(0x0100)  # Qt.UserRole
+                 for i in range(w.lst_devices.count())]
+        assert dev.address not in names, "设备列表应已刷新"
+    finally:
+        w.close()
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

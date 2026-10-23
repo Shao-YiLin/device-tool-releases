@@ -46,7 +46,7 @@ madao_device_tool/
 │   ├── test_keyboard.py      键盘专属功能（10项）
 │   ├── test_device_config.py 设备配置识别（10项）
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
-│   └── test_passive_disconnect.py 设备被动断开自动刷新（4项）
+│   └── test_passive_disconnect.py 设备被动断开自动刷新（8项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
 ├── logging_config.py      日志配置

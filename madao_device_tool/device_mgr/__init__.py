@@ -192,6 +192,8 @@ class DeviceManager:
             return self._dongle
         dongle = UsbComm()
         dongle.on_disconnected = lambda: self._on_dongle_removed()
+        # 子设备掉线（dongle 上报 EVENT_TYPE_DISCONNECT）→ 清池并通知 GUI
+        dongle.on_subdevice_disconnected = self.drop_dongle_sub
         # 用扫描到的 info 精确打开 type=2 那个设备（避免多设备时 find 撞错）
         dongle.connect(info)
         self._dongle = dongle
@@ -332,6 +334,7 @@ class DeviceManager:
         if self._dongle is None or not self._dongle.is_connected:
             dongle = UsbComm()
             dongle.on_disconnected = lambda: self._on_dongle_removed()
+            dongle.on_subdevice_disconnected = self.drop_dongle_sub
             dongle.connect(UsbComm.Mode.DONGLE)
             self._dongle = dongle
         # dongle 已挂载该子设备（GET_CONNECTED_DEVICE 同步过）就不再重复发 attach

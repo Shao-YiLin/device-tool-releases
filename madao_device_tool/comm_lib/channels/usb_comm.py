@@ -20,9 +20,10 @@
 
 from __future__ import annotations
 
+import logging
 import struct
 import threading
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from .base import BaseComm, CommError, DeviceInfo
 from ..protocol.cmd import DeviceManagerAction, UsbManagerCommand
@@ -32,6 +33,8 @@ from ..protocol.frame import (
     build_frame,
     parse_frames,
 )
+
+logger = logging.getLogger(__name__)
 
 # 对齐 mouseTool/mspeech_usb.py 末尾的 VID/PID
 USB_VENDOR_ID = 0x2480
@@ -99,6 +102,9 @@ class UsbComm(BaseComm):
         # 写锁：dongle 下多个子设备并发发送（如并发 OTA）时，
         # 串行化 USB 写，防止两帧在总线上交错导致协议错乱。
         self._tx_lock = threading.Lock()
+        # dongle 子设备被动掉线回调：(mac: bytes) -> None。
+        # 由 device_mgr 挂接（转发到 drop_dongle_sub 清理设备池并通知 GUI）。
+        self.on_subdevice_disconnected: Optional[Callable[[bytes], None]] = None
 
     # ---- 扫描 ----
     def scan(self) -> None:
@@ -341,8 +347,13 @@ class UsbComm(BaseComm):
                     extra={"mac": mac, "dongle_state": state},
                 ))
         elif event_type == 0x02:  # EVENT_TYPE_DISCONNECT_DEVICE
-            # 子设备掉线，从 mac 列表移除
+            # 子设备掉线：从 mac 列表移除，并通知上层清理设备池/刷新 GUI
             self._sub_macs = [m for m in self._sub_macs if m != mac]
+            if self.on_subdevice_disconnected is not None:
+                try:
+                    self.on_subdevice_disconnected(mac)
+                except Exception:
+                    logger.debug("on_subdevice_disconnected callback failed", exc_info=True)
         # inner 可能是子设备发的私有协议帧（透传）
         if inner:
             for frame in parse_frames(inner):
