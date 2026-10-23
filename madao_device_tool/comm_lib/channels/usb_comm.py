@@ -413,7 +413,10 @@ class UsbComm(BaseComm):
     def disconnect(self) -> None:
         """断开，释放 USB 句柄。对齐 usb_manager.c::_uninit / _stop。"""
         self._running.clear()
-        if self._rx_thread and self._rx_thread.is_alive():
+        # 被动拔出时本方法由 RX 线程触发（_notify_disconnected 回调链），
+        # 线程不能 join 自己，否则抛 RuntimeError 跳过后续句柄释放。
+        if (self._rx_thread and self._rx_thread.is_alive()
+                and self._rx_thread is not threading.current_thread()):
             self._rx_thread.join(timeout=2.0)
         self._rx_thread = None
         dev = self._dev

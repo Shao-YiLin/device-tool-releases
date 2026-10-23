@@ -75,6 +75,8 @@ class MainWindow(QMainWindow):
         # dongle 子设备被动掉线回调（DeviceManager -> GUI 主线程）
         self._tool._mgr.on_dongle_sub_disconnected = self._on_dongle_sub_disconnected
         self._tool._mgr.on_dongle_removed = self._on_dongle_removed
+        # 设备被动断开（USB 拔出 / BLE 掉线）-> 自动刷新设备列表
+        self._tool._mgr.on_device_disconnected = self._on_passive_disconnected
 
         self._build_ui()
         self._connect_signals()
@@ -158,10 +160,9 @@ class MainWindow(QMainWindow):
         splitter.setCollapsible(1, False)  # 日志不可被完全收起
         outer_layout.addWidget(splitter)
 
-        # 下部右下角：刷新设备池 + 扫描设备（放大按钮和文字）
+        # 下部右下角：扫描设备 + 批量固件升级（放大按钮和文字）
         bottom_bar = QHBoxLayout()
         bottom_bar.addStretch(1)
-        self.btn_refresh = QPushButton("刷新设备池")
         self.btn_scan = QPushButton("扫描设备")
         self.btn_batch_ota = QPushButton("批量固件升级")
         self.btn_batch_ota.setToolTip("对多台已连接设备并发升级固件")
@@ -170,10 +171,8 @@ class MainWindow(QMainWindow):
             "QPushButton { font-size: 13px; padding: 5px 14px; "
             "min-height: 18px; min-width: 80px; }"
         )
-        self.btn_refresh.setStyleSheet(big_btn_style)
         self.btn_scan.setStyleSheet(big_btn_style)
         self.btn_batch_ota.setStyleSheet(big_btn_style)
-        bottom_bar.addWidget(self.btn_refresh)
         bottom_bar.addWidget(self.btn_scan)
         bottom_bar.addWidget(self.btn_batch_ota)
         outer_layout.addLayout(bottom_bar)
@@ -193,7 +192,6 @@ class MainWindow(QMainWindow):
 
     def _connect_signals(self) -> None:
         self.btn_scan.clicked.connect(self._scan_all)
-        self.btn_refresh.clicked.connect(self._refresh_pool)
 
         # 录音菜单信号在 action 创建时已连
 
@@ -266,15 +264,6 @@ class MainWindow(QMainWindow):
         self._rebuild_list()
         self._worker.async_scan_usb()
         self._worker.async_scan_ble_bonded()
-
-    def _refresh_pool(self) -> None:
-        devs = self._tool.devices()
-        self._connected.clear()
-        for d in devs:
-            self._connected[d.address] = d
-        self._rebuild_list()
-        self._sync_dongle_panel()
-        self.statusBar().showMessage(f"设备池：{len(devs)} 个已连接")
 
     def _has_multi_dongle(self) -> bool:
         """是否已连接多联接收器（dongle）。"""
@@ -514,6 +503,25 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentWidget(self._placeholder)
         self._sync_dongle_panel()
         self._log(f"已断开: {address}")
+
+    def _on_passive_disconnected(self, address: str) -> None:
+        """设备被动断开（拔出/掉线，底层线程触发）：转主线程自动刷新界面。"""
+        QTimer.singleShot(0, lambda: self._handle_passive_disconnected_ui(address))
+
+    def _handle_passive_disconnected_ui(self, address: str) -> None:
+        """主线程：清理被动断开的设备并刷新列表（可重复调用，幂等）。"""
+        dev = self._connected.pop(address, None)
+        self._scanned_names.pop(address, None)
+        panel = self._panels.pop(address, None)
+        if panel is not None:
+            if self.stack.currentWidget() is panel:
+                self.stack.setCurrentWidget(self._placeholder)
+            self.stack.removeWidget(panel)
+            panel.deleteLater()
+        self._sync_dongle_panel()
+        self._rebuild_list()
+        if dev is not None:
+            self._log(f"设备已断开: {dev.name} ({address})")
 
     def _on_operation_result(self, op_id: str, result) -> None:
         # 转发给对应的 panel（鼠标/键盘面板用 op_id 匹配回调）

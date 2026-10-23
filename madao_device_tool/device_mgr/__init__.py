@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 from typing import Callable, Dict, Iterator, List, Optional
 
@@ -18,6 +19,8 @@ from comm_lib.channels import BaseComm, CommError, DeviceInfo
 from comm_lib.channels.usb_comm import UsbComm, UsbDeviceInfo
 from device_config import get_device_config, infer_device_type
 from device_model import BaseDevice, KbDevice, MouseDevice
+
+logger = logging.getLogger(__name__)
 
 # 设备类型常量（对齐 lib_device_define.h）
 DEVICE_TYPE_MOUSE = 0x31
@@ -117,6 +120,9 @@ class DeviceManager:
         self.on_dongle_sub_disconnected: Optional[Callable[[str], None]] = None
         # dongle 被动拔出回调：() -> None
         self.on_dongle_removed: Optional[Callable[[], None]] = None
+        # 设备被动断开回调：(address) -> None（USB 拔出 / BLE 掉线等，
+        # GUI 据此自动刷新设备列表，无需手动刷新）
+        self.on_device_disconnected: Optional[Callable[[str], None]] = None
 
     # ---- 扫描（验收 3.4 首条：BLE/USB 独立扫描入口） ----
     def scan_ble(self, scan_timeout: float = 5.0) -> List[DeviceInfo]:
@@ -515,13 +521,20 @@ class DeviceManager:
         """设备被动断开（拔出/掉线）时清理池。验收 3.4 末条：无句柄泄漏。"""
         with self._lock:
             device = self._devices.pop(address, None)
-        if device is not None:
+        if device is None:
+            return
+        try:
+            # 底层已断开，仅清引用；dongle 子设备也走 detach
+            if hasattr(device.comm, "disconnect"):
+                device.comm.disconnect()
+        except Exception:
+            pass
+        # 通知上层（GUI 自动刷新列表）；回调异常不影响清理流程
+        if self.on_device_disconnected is not None:
             try:
-                # 底层已断开，仅清引用；dongle 子设备也走 detach
-                if hasattr(device.comm, "disconnect"):
-                    device.comm.disconnect()
+                self.on_device_disconnected(address)
             except Exception:
-                pass
+                logger.debug("on_device_disconnected callback failed", exc_info=True)
 
     def _on_dongle_removed(self) -> None:
         """dongle 被拔出：池中所有 dongle 子设备一并清理。"""

@@ -45,7 +45,8 @@ madao_device_tool/
 │   ├── test_device_mgr.py    设备管理器（8项）
 │   ├── test_keyboard.py      键盘专属功能（10项）
 │   ├── test_device_config.py 设备配置识别（10项）
-│   └── test_ota_multi_device.py 多设备并发 OTA（7项）
+│   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
+│   └── test_passive_disconnect.py 设备被动断开自动刷新（4项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
 ├── logging_config.py      日志配置
@@ -166,6 +167,7 @@ pyusb 需要 libusb 后端。Windows 下：
 - **鉴权握手完整实现**（AES-128-ECB + MD5 + sdbm hash + 4 阶段加密交换）
 - **OTA 升级完整实现**（固件 AES-128-ECB 加密 + 32 字节分片 + CRC 校验 + 进度回调）
 - **多设备并发 OTA 升级**（非模态升级窗口，多台设备各自独立进度/日志，后台并发执行）
+- **设备被动断开自动刷新**（USB 拔出 / BLE 掉线时设备列表自动移除，无需手动刷新）
 
 ## 多设备并发 OTA 升级
 
