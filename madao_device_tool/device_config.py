@@ -69,7 +69,7 @@ _DEVICES: Dict[str, Dict] = {
     "1039": {"name": "M110", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "1040": {"name": "M111", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "1041": {"name": "M111 Spark", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
-    "1042": {"name": "AM60", "type": "mouse", "image": "am60_black.png", "capabilities": list(_MOUSE_CAPS)},
+    "1042": {"name": "AM60", "type": "mouse", "image": "M610_Ultra.png", "capabilities": list(_MOUSE_CAPS)},
     "1043": {"name": "AM50", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "1044": {"name": "AM50 Pro", "type": "mouse", "image": "am50_white.png", "capabilities": list(_MOUSE_CAPS)},
     "1045": {"name": "AM50", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
