@@ -278,21 +278,28 @@ class BaseDevice:
         """获取从机版本号（AM60 鼠标 / AT80 键盘等带从机的设备）。
 
         cmd=GET_SLAVE_PROP, payload=[SLAVE_DEVICE_VERSION(0x1F)]
-        应答格式：n * (2 字节从机设备号 + 4 字节版本号)，小端。
-        例如 610 返回 [(0x0002, 0x0D000001)] 表示设备号 2、版本 1.0.0.13。
-        返回 [(device_id, version), ...]。
+
+        应答有两种形态（真机实测）：
+        - 6 字节整条：2 字节从机设备号 + 4 字节版本号，可以有多条
+          （如 AM60：设备号 2、版本 1.0.0.13）
+        - 短应答（如 AT80 只回 2 字节 0x0157）：没有设备号，整段就是版本号
+
+        返回 [(device_id, version_bytes), ...]。version_bytes 按应答里的字节序原样返回，
+        调用方用 ".".join(str(b) for b in version_bytes) 拼成 x.y.z.w。
         """
         err, data = self._get_slave_prop(PropKey.SLAVE_DEVICE_VERSION)
-        if err != ErrCode.SUCCESS or len(data) < 6:
+        if err != ErrCode.SUCCESS:
             raise DeviceError(f"获取从机版本号失败 err={err} data={data.hex()}")
-        if len(data) % 6 != 0:
-            raise DeviceError(f"从机版本号应答长度异常: len={len(data)} data={data.hex()}")
-        result = []
-        for i in range(0, len(data), 6):
-            dev_id = int.from_bytes(data[i:i + 2], "little")
-            ver = bytes_to_u32(data[i + 2:i + 6])
-            result.append((dev_id, ver))
-        return result
+        if not data:
+            return []
+        if len(data) % 6 == 0:
+            result = []
+            for i in range(0, len(data), 6):
+                dev_id = int.from_bytes(data[i:i + 2], "little")
+                result.append((dev_id, bytes(data[i + 2:i + 6])))
+            return result
+        # 短应答：整段作为版本号（无设备号，用 0 占位）
+        return [(0, bytes(data))]
 
     def handshake(self) -> int:
         """握手。

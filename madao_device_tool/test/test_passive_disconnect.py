@@ -154,7 +154,7 @@ def test_device_mgr_wires_sub_disconnect_to_drop():
 
 
 def test_winrt_watchdog_detects_ble_disconnect():
-    """WinrtBleComm 看门狗：GATT Disconnected 应触发断开通知。"""
+    """WinrtBleComm 看门狗：先见过 Connected，之后连续判定 Disconnected 才通知。"""
     try:
         from comm_lib.channels.winrt_ble_comm import WinrtBleComm
     except Exception as e:
@@ -166,22 +166,105 @@ def test_winrt_watchdog_detects_ble_disconnect():
     # BaseComm.on_disconnected 是无参回调（设备层用 lambda 包装地址）
     comm.on_disconnected = lambda: fired.append(1)
 
-    # Disconnected（BluetoothConnectionStatus.Disconnected = 1）
+    # 先观察到 Connected（BluetoothConnectionStatus.Connected = 0）
     comm._device = MagicMock()
-    comm._device.connection_status = 1
-    assert comm._check_connection_alive() is False, "掉线后看门狗应退出"
-    assert len(fired) == 1, "掉线应触发一次断开通知"
-
-    # Connected（= 0）：存活，不触发
-    fired.clear()
     comm._device.connection_status = 0
     assert comm._check_connection_alive() is True
     assert fired == []
 
+    # 之后变 Disconnected（= 1）：需连续两次才判定掉线
+    comm._device.connection_status = 1
+    assert comm._check_connection_alive() is True, "单次抖动不应判定掉线"
+    assert fired == []
+    assert comm._check_connection_alive() is False, "连续判定掉线后看门狗应退出"
+    assert len(fired) == 1, "掉线应触发一次断开通知"
+
     # 设备已被主动关闭（_device=None）：静默退出，不误触发
+    fired.clear()
     comm._device = None
     assert comm._check_connection_alive() is False
     assert fired == []
+
+
+def test_winrt_watchdog_ignores_disconnected_without_connected():
+    """CACHED 模式下 connection_status 常年 Disconnected：从未见过 Connected 时不误判掉线。"""
+    try:
+        from comm_lib.channels.winrt_ble_comm import WinrtBleComm
+    except Exception as e:
+        print(f"SKIP: winrt 后端不可用（{e}），跳过")
+        return
+
+    comm = WinrtBleComm()
+    fired = []
+    comm.on_disconnected = lambda: fired.append(1)
+
+    comm._device = MagicMock()
+    comm._device.connection_status = 1  # Disconnected，但从未见过 Connected
+    for _ in range(5):
+        assert comm._check_connection_alive() is True, "状态不可靠时不应判定掉线"
+    assert fired == [], "未见过 Connected 时不应触发断开通知"
+
+
+def test_usb_rx_pipe_error_keeps_connection():
+    """USB 瞬时错误（PIPE=-9）：不能拆掉连接（否则 OTA 途中会判为"未连接"）。"""
+    from comm_lib.channels.usb_comm import UsbComm
+
+    comm = UsbComm()
+    fired = []
+    comm.on_disconnected = lambda: fired.append(1)
+
+    class _FakeDev:
+        def __init__(self):
+            self.calls = 0
+
+        def read(self, ep, size, timeout=None):
+            self.calls += 1
+            if self.calls == 1:
+                raise _usb_error(32, -9, "Pipe error")
+            comm._running.clear()  # 第二次读时退出循环
+            raise _usb_timeout()
+
+        def clear_halt(self, ep):
+            self.cleared = True
+
+    comm._dev = _FakeDev()
+    comm._mode = UsbComm.Mode.DIRECT
+    comm._running.set()
+    comm._rx_loop()
+
+    assert fired == [], "Pipe error 不应触发断开通知"
+    assert comm.is_connected, "Pipe error 后连接应仍然有效"
+
+
+def test_usb_rx_no_device_triggers_disconnect():
+    """USB 设备真的不在了（errno=19 / backend_code=-4）：触发断开通知。"""
+    from comm_lib.channels.usb_comm import UsbComm
+
+    comm = UsbComm()
+    fired = []
+    comm.on_disconnected = lambda: fired.append(1)
+
+    class _FakeDev:
+        def read(self, ep, size, timeout=None):
+            raise _usb_error(19, -4, "No such device")
+
+    comm._dev = _FakeDev()
+    comm._mode = UsbComm.Mode.DIRECT
+    comm._running.set()
+    comm._rx_loop()
+
+    assert len(fired) == 1, "设备拔出应触发一次断开通知"
+
+
+def _usb_error(errno_, backend_code, msg):
+    import usb.core
+    # pyusb: USBError(strerror, error_code->backend_error_code, errno)
+    return usb.core.USBError(msg, backend_code, errno_)
+
+
+def _usb_timeout():
+    import usb.core
+    return usb.core.USBTimeoutError("timeout")
 
 
 def test_gui_refresh_via_comm_notify_chain():

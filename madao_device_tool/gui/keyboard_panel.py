@@ -458,10 +458,15 @@ class KeyboardPanel(QWidget):
                 return
             parts = []
             for dev_id, ver in items:
-                # 2 字节设备号 = [类型(高字节)][索引(低字节)]
-                t = (dev_id >> 8) & 0xFF
-                idx = dev_id & 0xFF
-                parts.append(f"类型{t}#索引{idx}:{_format_version(ver)}")
+                # version_bytes 按应答原样字节序拼成 x.y.z.w
+                version = ".".join(str(b) for b in ver)
+                if dev_id:
+                    # 2 字节设备号 = [类型(高字节)][索引(低字节)]
+                    t = (dev_id >> 8) & 0xFF
+                    idx = dev_id & 0xFF
+                    parts.append(f"类型{t}#索引{idx}:{version}")
+                else:
+                    parts.append(version)
             self.lbl_slave_version.setText("; ".join(parts))
             self._log("从机版本号: " + ", ".join(parts))
         self._safe_op("get_slave_device_version", "get_slave_device_version", on_ok=_on_ver)

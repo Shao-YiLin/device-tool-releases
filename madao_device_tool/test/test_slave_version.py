@@ -76,14 +76,14 @@ def _respond(comm: MockComm, data: bytes, err: int = ErrCode.SUCCESS):
 # ---------------------------------------------------------------------------
 
 def test_slave_version_mouse_roundtrip():
-    """AM60 鼠标：应答 n*(2 字节设备号 + 4 字节版本号) 解析为 [(device_id, version)]。"""
+    """AM60 鼠标：应答 n*(2 字节设备号 + 4 字节版本号) 解析为 [(device_id, version_bytes)]。"""
     comm = MockComm()
     dev = MouseDevice(comm)
     data = _slave_record(2, bytes([0x01, 0x00, 0x00, 0x0D])) + \
         _slave_record(3, bytes([0x02, 0x00, 0x00, 0x00]))
     _respond(comm, data)
 
-    assert dev.get_slave_device_version() == [(2, 0x0D000001), (3, 2)]
+    assert dev.get_slave_device_version() == [(2, b"\x01\x00\x00\x0d"), (3, b"\x02\x00\x00\x00")]
 
     req = _last_sent_frame(comm)
     assert req.cmd == Command.GET_SLAVE_PROP
@@ -96,20 +96,25 @@ def test_slave_version_keyboard_roundtrip():
     kb = KbDevice(comm)
     _respond(comm, _slave_record(1, bytes([0x05, 0x00, 0x00, 0x00])))
 
-    assert kb.get_slave_device_version() == [(1, 5)]
+    assert kb.get_slave_device_version() == [(1, b"\x05\x00\x00\x00")]
 
 
-def test_slave_version_bad_length_raises():
-    """应答长度不是 6 的倍数：抛 DeviceError（附带原始数据便于定位）。"""
+def test_slave_version_short_response():
+    """AT80 真机只回 2 字节（0x0157，err=SUCCESS）：按短应答处理，不报错。"""
+    comm = MockComm()
+    kb = KbDevice(comm)
+    _respond(comm, b"\x01\x57")
+
+    assert kb.get_slave_device_version() == [(0, b"\x01\x57")]
+
+
+def test_slave_version_empty_response():
+    """空应答：返回空列表（不视为错误）。"""
     comm = MockComm()
     dev = MouseDevice(comm)
-    _respond(comm, _slave_record(2, bytes([0x01, 0x00, 0x00, 0x0D])) + b"\x07")
+    _respond(comm, b"")
 
-    try:
-        dev.get_slave_device_version()
-        assert False, "长度异常时应抛 DeviceError"
-    except DeviceError as e:
-        assert "长度异常" in str(e)
+    assert dev.get_slave_device_version() == []
 
 
 def test_slave_version_err_code_raises():
@@ -172,7 +177,8 @@ def test_keyboard_panel_has_at80_slave_version():
         assert panel.btn_slave_ver_read.text() == "读取"
         # 触发读取并回填结果，校验标签内容
         panel._read_slave_device_version()
-        panel.handle_result(f"{dev.address}:get_slave_device_version", [(2, 0x0D000001)])
+        panel.handle_result(f"{dev.address}:get_slave_device_version",
+                            [(2, b"\x01\x00\x00\x0d")])
         assert "1.0.0.13" in panel.lbl_slave_version.text(), panel.lbl_slave_version.text()
     finally:
         panel.close()

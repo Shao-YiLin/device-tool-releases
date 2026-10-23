@@ -46,8 +46,8 @@ madao_device_tool/
 │   ├── test_keyboard.py      键盘专属功能（10项）
 │   ├── test_device_config.py 设备配置识别（10项）
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
-│   ├── test_slave_version.py 从机版本号接口（7项）
-│   └── test_passive_disconnect.py 设备被动断开自动刷新（8项）
+│   ├── test_slave_version.py 从机版本号接口（8项）
+│   └── test_passive_disconnect.py 设备被动断开自动刷新（11项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
 ├── logging_config.py      日志配置
@@ -171,6 +171,15 @@ pyusb 需要 libusb 后端。Windows 下：
 - **设备被动断开自动刷新**（USB 拔出 / BLE 掉线时设备列表自动移除，无需手动刷新）
 - **从机版本号读取**（AM60 鼠标 / AT80 键盘，GET_SLAVE_PROP[0x1F]）
 
+### 断链判定策略（避免误判掉线）
+
+- **USB**：只有 libusb 报 `NO_DEVICE(-4)` / `IO(-1)`（或 Windows errno 19/4）才判定"设备已拔出"；
+  `PIPE(-9)` 等瞬时错误按 C 库 `usb_manager.c::_start_read` 的做法清 halt 后继续读。
+  一次端点 stall 不会再把整条连接拆掉（否则 OTA 传输途中会突然变成"设备未连接"）。
+- **BLE**：必须"先观察到 `Connected`、之后连续两次 `Disconnected`"才判定掉线。
+  Windows CACHED 模式下 `connection_status` 常年是 `Disconnected`（不代表 GATT 会话断开），
+  只看它会误杀刚连上的设备。
+
 ## 从机版本号
 
 带从机的设备（AM60 鼠标、AT80 键盘）可以通过通用属性通道读取从机固件版本：
@@ -180,11 +189,14 @@ from devtool import DeviceTool
 tool = DeviceTool()
 dev = tool.connect(tool.scan_usb()[0])   # 或 tool.connect_ble_bonded(mac, device_type=0x32)
 for device_id, version in dev.get_slave_device_version():
-    print(hex(device_id), ".".join(str(b) for b in version.to_bytes(4, "little")))
+    print(hex(device_id), ".".join(str(b) for b in version))
 ```
 
 - 指令：`GET_SLAVE_PROP`，payload = `[0x1F]`（`PropKey.SLAVE_DEVICE_VERSION`）
-- 应答：n 组「2 字节从机设备号 + 4 字节版本号」（小端），版本号按字节展开为 `x.y.z.w`
+- 应答有两种形态（真机实测）：
+  - 6 字节整条：2 字节从机设备号 + 4 字节版本号，可有多条（AM60）
+  - 短应答：整段就是版本号、没有设备号（AT80 实测回 2 字节 `0x0157`）
+- `version` 是原始字节，用 `".".join(str(b) for b in version)` 拼成 `x.y.z.w`
 - 界面：鼠标面板「AM60 专属」、键盘面板「AT80 专属」分组内的「从机版本号 读取」按钮
 
 ## 多设备并发 OTA 升级

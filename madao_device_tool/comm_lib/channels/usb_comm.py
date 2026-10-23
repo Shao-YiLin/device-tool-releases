@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import struct
 import threading
+import time
 from typing import Callable, List, Optional
 
 from .base import BaseComm, CommError, DeviceInfo
@@ -46,6 +47,15 @@ USB_INTERFACE = 1
 USB_EP_IN = 0x83
 USB_EP_OUT = 0x06
 USB_TIMEOUT_MS = 1000
+
+# libusb 错误码（对齐 src_archive/windows/libUsb/include/libusb.h）
+#   -1 IO / -4 NO_DEVICE：设备真的不在了
+#   -9 PIPE：端点 stall（瞬时错误，设备仍在）
+USB_ERROR_IO = -1
+USB_ERROR_NO_DEVICE = -4
+USB_ERROR_PIPE = -9
+# Windows errno：19=ENODEV（设备拔出），4=EBUSY
+WIN_ERRNO_NO_DEVICE = (19, 4)
 
 
 class UsbDeviceInfo(DeviceInfo):
@@ -263,11 +273,25 @@ class UsbComm(BaseComm):
             except usb.core.USBTimeoutError:
                 continue  # 正常超时，继续
             except usb.core.USBError as e:
-                log.warning("USB RX error: %s (backend_code=%s)", e, getattr(e, 'backend_error_code', '?'))
-                # 设备拔出等
-                self._running.clear()
-                self._notify_disconnected()
-                break
+                code = getattr(e, 'backend_error_code', None)
+                os_errno = getattr(e, 'errno', None)
+                # 只有"设备真的不在了"才算掉线。
+                # 其它错误（如 PIPE=-9 端点 stall）按 C 库 usb_manager.c::_start_read 的做法：
+                # Sleep(1) 后继续读，不能因为一次瞬时错误就把连接拆掉
+                # （否则 OTA 传输中一次 stall 就会让设备被判为"未连接"）。
+                if code in (USB_ERROR_IO, USB_ERROR_NO_DEVICE) or os_errno in WIN_ERRNO_NO_DEVICE:
+                    log.warning("USB 设备已断开: %s (backend_code=%s)", e, code)
+                    self._running.clear()
+                    self._notify_disconnected()
+                    break
+                log.warning("USB RX 瞬时错误（继续读取）: %s (backend_code=%s)", e, code)
+                if code == USB_ERROR_PIPE:
+                    # 端点 stall：清掉 halt 状态后再读
+                    try:
+                        dev.clear_halt(self._ep_in)
+                    except Exception:
+                        pass
+                time.sleep(0.05)
 
     def _handle_rx(self, data: bytes):
         """处理 USB 接收到的原始字节。

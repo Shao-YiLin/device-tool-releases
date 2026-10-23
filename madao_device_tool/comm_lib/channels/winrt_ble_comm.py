@@ -47,6 +47,8 @@ class WinrtBleComm(BaseComm):
 
     # 掉线看门狗轮询间隔（秒）
     WATCHDOG_INTERVAL_SEC = 1.0
+    # 连续判定为掉线的次数（状态抖动时不要立刻下结论）
+    WATCHDOG_CONFIRM_COUNT = 2
 
     def __init__(self, uuid_set: str = "telink") -> None:
         super().__init__()
@@ -79,6 +81,11 @@ class WinrtBleComm(BaseComm):
         # 掉线看门狗：设备被动掉线（关机/离开范围）时 notify 静默停止，
         # 若无人检测，上层永远收不到断开通知（GUI 也就不会刷新）。
         self._watchdog_stop = threading.Event()
+        # 看门狗状态：只有"先见过 Connected、之后变 Disconnected"才判定掉线。
+        # CACHED 模式下 Windows 的 connection_status 常年是 Disconnected
+        # （即使 GATT 会话正常），直接据此判定会误杀正常连接。
+        self._watchdog_seen_connected = False
+        self._watchdog_lost_count = 0
 
     # ---- 后台事件循环 ----
     def _start_loop(self):
@@ -258,6 +265,10 @@ class WinrtBleComm(BaseComm):
 
         返回 False 表示看门狗应退出（已掉线并通知 / 设备已被主动关闭）。
         注意：只捕获"读状态"的异常；断开通知的回调异常不在此吞掉。
+
+        判定规则：必须"先观察到 Connected，之后连续 WATCHDOG_CONFIRM_COUNT 次
+        观察到 Disconnected"才判定掉线。CACHED 模式下 connection_status 常年
+        为 Disconnected（不代表 GATT 会话断开），只看它会误杀正常连接。
         """
         if self._device is None:
             return False  # 已被主动 disconnect 清理，无需通知
@@ -266,15 +277,40 @@ class WinrtBleComm(BaseComm):
             if status is None:
                 return True  # 后端不暴露该属性，无法检测
             name = getattr(status, "name", None) or str(status)
-            # BluetoothConnectionStatus: Connected=0, Disconnected=1
-            disconnected = name.endswith("Disconnected") or int(status) == 1
+            try:
+                code = int(status)
+            except (TypeError, ValueError):
+                code = None
         except Exception:
             return True  # 属性偶发不可用，下一轮再查
-        if disconnected:
-            logger.info("BLE 连接已断开（看门狗检测到设备掉线）")
-            self._notify_disconnected()
-            return False
-        return True
+
+        # BluetoothConnectionStatus: Connected=0, Disconnected=1
+        # 注意 "Disconnected" 也以 "Connected" 结尾，先判 Disconnected
+        if name.endswith("Disconnected") or code == 1:
+            state = "disconnected"
+        elif name.endswith("Connected") or code == 0:
+            state = "connected"
+        else:
+            state = "unknown"
+
+        if state == "connected":
+            self._watchdog_seen_connected = True
+            self._watchdog_lost_count = 0
+            return True
+        if state == "unknown":
+            return True
+
+        # state == "disconnected"
+        if not self._watchdog_seen_connected:
+            # 从未观察到 Connected：无法区分"真掉线"和"状态本来就不可靠"
+            logger.debug("BLE 看门狗: 状态 Disconnected，但从未观察到 Connected，忽略")
+            return True
+        self._watchdog_lost_count += 1
+        if self._watchdog_lost_count < self.WATCHDOG_CONFIRM_COUNT:
+            return True
+        logger.info("BLE 连接已断开（看门狗检测到设备掉线）")
+        self._notify_disconnected()
+        return False
 
     def disconnect(self) -> None:
         self._watchdog_stop.set()  # 先停看门狗，避免与主动断开互相触发
