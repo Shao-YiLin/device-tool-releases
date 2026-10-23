@@ -45,7 +45,7 @@ _DEVICES: Dict[str, Dict] = {
     "1015": {"name": "M320", "type": "mouse", "image": "lite_m320_white.png", "capabilities": list(_MOUSE_CAPS)},
     "1016": {"name": "M210W", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "1017": {"name": "F20", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
-    "1018": {"name": "AM40", "type": "mouse", "image": "standard_black.png", "capabilities": list(_MOUSE_CAPS)},
+    "1018": {"name": "FeiShu-S", "type": "mouse", "image": "standard_black.png", "capabilities": list(_MOUSE_CAPS)},
     "1019": {"name": "PRO MAX", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "1020": {"name": "M211X", "type": "mouse", "image": "m211_black.png", "capabilities": list(_MOUSE_CAPS)},
     "1021": {"name": "M610", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
@@ -132,7 +132,7 @@ _DEVICES: Dict[str, Dict] = {
     "9004": {"name": "LM10", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "9005": {"name": "LM20", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "9006": {"name": "LM10", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
-    "9007": {"name": "N18 Med", "type": "other", "image": "", "capabilities": []},
+    "9007": {"name": "X1", "type": "other", "image": "", "capabilities": []},
     "9008": {"name": "LM10", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "9009": {"name": "LM20", "type": "mouse", "image": "", "capabilities": list(_MOUSE_CAPS)},
     "9010": {"name": "thinkplus AI X1", "type": "mouse", "image": "x1.png", "capabilities": list(_MOUSE_CAPS)},
@@ -143,7 +143,7 @@ _DEVICES: Dict[str, Dict] = {
 # 支持 RGB 灯光的鼠标 product_no 集合（G50 / AM40 / AM50 系列 / AM60）
 _LIGHT_MOUSE_PRODUCT_NOS = {
     "1011",  # G50
-    "1018",  # AM40
+    "1018",  # FeiShu-S
     "1023", "1028", "1031", "1032", "1043", "1044", "1045", "1047",  # AM50 系列
     "1042",  # AM60
     "1049",  # AM40（另一 SKU）
