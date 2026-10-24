@@ -105,7 +105,7 @@ def test_main_window_auto_refresh_on_passive_disconnect():
 
         # 模拟底层线程触发被动断开（DeviceManager 清池并回调 GUI）
         w._tool._mgr._on_device_disconnected(dev_a.address)
-        app.processEvents()  # QTimer.singleShot(0) 需要事件循环分发
+        app.processEvents()  # Signal 需要事件循环分发到主线程
 
         assert dev_a.address not in w._connected, "断开的设备应从窗口列表移除"
         assert dev_b.address in w._connected, "其他设备应保留"
@@ -306,6 +306,61 @@ def test_gui_refresh_via_comm_notify_chain():
         app.processEvents()
 
         assert dev.address not in w._connected, "GUI 应自动移除断开的设备"
+        names = [w.lst_devices.item(i).data(0x0100)  # Qt.UserRole
+                 for i in range(w.lst_devices.count())]
+        assert dev.address not in names, "设备列表应已刷新"
+    finally:
+        w.close()
+
+
+def test_gui_refresh_from_plain_thread_updates_list():
+    """回归：断开回调在普通（无事件循环）线程里触发时，GUI 仍必须刷新。
+
+    真机场景：USB RX 线程检测到拔出 → _notify_disconnected → GUI。
+    旧实现用 QTimer.singleShot(0) 转投主线程，但 RX 线程没有 Qt 事件循环，
+    定时器永远不会触发 → 界面不刷新（设备列表里设备还在，但池已清空）。
+    新实现改用 Signal（自动排队到主线程）。
+    """
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    try:
+        from PySide6.QtWidgets import QApplication
+    except ImportError:
+        print("SKIP: PySide6 未安装，跳过 GUI 用例")
+        return
+
+    gui_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "gui")
+    if gui_dir not in sys.path:
+        sys.path.insert(0, gui_dir)
+
+    app = QApplication.instance() or QApplication([])
+    from main_window import MainWindow
+
+    class FakeDev:
+        def __init__(s, address, name):
+            s.address = address
+            s.name = name
+            s.transport = "usb"
+            s.connection_type = "usb_single_dongle"
+
+    w = MainWindow()
+    try:
+        dev = FakeDev("04:dd", "设备D")
+        w._connected[dev.address] = dev
+        w._tool._mgr._register(MagicMock(), dev.address)
+        w._rebuild_list()
+        assert w.lst_devices.count() == 1
+
+        # 真正的非 Qt 线程里触发（等价 USB RX 线程）
+        import threading
+
+        th = threading.Thread(
+            target=w._tool._mgr._on_device_disconnected, args=(dev.address,)
+        )
+        th.start()
+        th.join()
+        app.processEvents()  # 分发排队到主线程的 Signal
+
+        assert dev.address not in w._connected, "非 Qt 线程触发时 GUI 也应自动移除设备"
         names = [w.lst_devices.item(i).data(0x0100)  # Qt.UserRole
                  for i in range(w.lst_devices.count())]
         assert dev.address not in names, "设备列表应已刷新"

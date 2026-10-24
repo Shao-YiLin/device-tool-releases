@@ -10,7 +10,7 @@ import logging
 import time
 from typing import Dict, List, Optional
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -50,6 +50,11 @@ _DONGLE_ADDR = "__dongle__"
 
 
 class MainWindow(QMainWindow):
+    # 底层 RX/工作线程回调 → 主线程（QTimer.singleShot 在无事件循环的线程里不会触发，必须用 Signal）
+    sig_passive_disconnected = Signal(str)
+    sig_dongle_sub_disconnected = Signal(str)
+    sig_dongle_removed = Signal(list)
+
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Madao 设备管理工具")
@@ -80,6 +85,10 @@ class MainWindow(QMainWindow):
 
         self._build_ui()
         self._connect_signals()
+        # 跨线程回调转投主线程（Signal 自动排队到对象所在线程）
+        self.sig_passive_disconnected.connect(self._handle_passive_disconnected_ui)
+        self.sig_dongle_sub_disconnected.connect(self._handle_sub_disconnected_ui)
+        self.sig_dongle_removed.connect(self._handle_dongle_removed_ui)
         self.statusBar().showMessage("就绪")
 
     # ---- UI 构建 ----
@@ -427,9 +436,10 @@ class MainWindow(QMainWindow):
     def _on_dongle_sub_disconnected(self, address: str) -> None:
         """dongle 子设备被动掉线（DeviceManager 回调，RX 线程触发）。
 
-        通过 QTimer.singleShot(0) 转投主线程执行 UI 更新。
+        用 Signal 转投主线程执行 UI 更新（QTimer.singleShot 在无事件循环的
+        RX 线程里不会触发，会导致界面不刷新）。
         """
-        QTimer.singleShot(0, lambda: self._handle_sub_disconnected_ui(address))
+        self.sig_dongle_sub_disconnected.emit(address)
 
     def _handle_sub_disconnected_ui(self, address: str) -> None:
         dev = self._connected.pop(address, None)
@@ -441,16 +451,17 @@ class MainWindow(QMainWindow):
         if dev is not None:
             self._log(f"子设备已断开: {dev.name} ({address})")
 
-    def _on_dongle_removed(self) -> None:
+    def _on_dongle_removed(self, addresses: list) -> None:
         """dongle 被拔出（DeviceManager 回调，RX 线程触发）。"""
-        QTimer.singleShot(0, self._handle_dongle_removed_ui)
+        self.sig_dongle_removed.emit(list(addresses))
 
-    def _handle_dongle_removed_ui(self) -> None:
-        for addr in [a for a in self._connected
-                     if self._connected[a].connection_type == "usb_dongle"]:
+    def _handle_dongle_removed_ui(self, addresses: list) -> None:
+        for addr in addresses:
             self._connected.pop(addr, None)
             panel = self._panels.pop(addr, None)
             if panel is not None:
+                if self.stack.currentWidget() is panel:
+                    self.stack.setCurrentWidget(self._placeholder)
                 self.stack.removeWidget(panel)
                 panel.deleteLater()
         self._sync_dongle_panel()
@@ -506,7 +517,7 @@ class MainWindow(QMainWindow):
 
     def _on_passive_disconnected(self, address: str) -> None:
         """设备被动断开（拔出/掉线，底层线程触发）：转主线程自动刷新界面。"""
-        QTimer.singleShot(0, lambda: self._handle_passive_disconnected_ui(address))
+        self.sig_passive_disconnected.emit(address)
 
     def _handle_passive_disconnected_ui(self, address: str) -> None:
         """主线程：清理被动断开的设备并刷新列表（可重复调用，幂等）。"""

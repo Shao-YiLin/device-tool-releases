@@ -47,7 +47,7 @@ madao_device_tool/
 │   ├── test_device_config.py 设备配置识别（10项）
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
 │   ├── test_slave_version.py 从机版本号接口（8项）
-│   └── test_passive_disconnect.py 设备被动断开自动刷新（11项）
+│   └── test_passive_disconnect.py 设备被动断开自动刷新（12项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
 ├── logging_config.py      日志配置
@@ -179,6 +179,11 @@ pyusb 需要 libusb 后端。Windows 下：
 - **BLE**：必须"先观察到 `Connected`、之后连续两次 `Disconnected`"才判定掉线。
   Windows CACHED 模式下 `connection_status` 常年是 `Disconnected`（不代表 GATT 会话断开），
   只看它会误杀刚连上的设备。
+- **界面刷新**：断开回调跑在 RX 线程（无 Qt 事件循环），跨线程更新 UI 必须用
+  `Signal`（自动排队到主线程），不能用 `QTimer.singleShot(0)`——它在没有事件循环的
+  线程里永远不会触发，会表现成"拔掉 USB 但设备还留在列表里"。
+- **重连保护**：同一地址已连上时 `connect()` 直接复用现有实例；否则同一 USB 设备会被
+  两个 comm 抢占，旧 RX 线程与新线程抢 ACK 导致全部超时。
 
 ## 从机版本号
 

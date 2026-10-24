@@ -118,8 +118,8 @@ class DeviceManager:
         self.on_scan_result: Optional[Callable[[DeviceInfo], None]] = None
         # dongle 子设备被动掉线回调：(mac_str) -> None（GUI 据此把设备从列表移除）
         self.on_dongle_sub_disconnected: Optional[Callable[[str], None]] = None
-        # dongle 被动拔出回调：() -> None
-        self.on_dongle_removed: Optional[Callable[[], None]] = None
+        # dongle 被动拔出回调：(address_list) -> None（GUI 据此把子设备从列表移除）
+        self.on_dongle_removed: Optional[Callable[[List[str]], None]] = None
         # 设备被动断开回调：(address) -> None（USB 拔出 / BLE 掉线等，
         # GUI 据此自动刷新设备列表，无需手动刷新）
         self.on_device_disconnected: Optional[Callable[[str], None]] = None
@@ -296,6 +296,12 @@ class DeviceManager:
         return device
 
     def _connect_usb_direct(self, info: DeviceInfo) -> Optional[BaseDevice]:
+        # 已连上同一地址：直接复用（否则同一 USB 设备会被两个 comm 抢占，
+        # 旧 comm 的 RX 线程仍在跑，和新 comm 抢 ACK 导致全部超时）
+        with self._lock:
+            existing = self._devices.get(info.address)
+        if existing is not None and existing.comm.is_connected:
+            return existing
         comm = UsbComm()
         comm.on_disconnected = lambda: self._on_device_disconnected(info.address)
         comm.connect(info)
@@ -540,14 +546,17 @@ class DeviceManager:
                 logger.debug("on_device_disconnected callback failed", exc_info=True)
 
     def _on_dongle_removed(self) -> None:
-        """dongle 被拔出：池中所有 dongle 子设备一并清理。"""
+        """dongle 被拔出：池中所有 dongle 子设备一并清理并通知 GUI。"""
         with self._lock:
             addrs = [a for a, d in self._devices.items() if isinstance(d.comm, _DongleSubCommAdapter)]
             for a in addrs:
                 self._devices.pop(a, None)
         self._dongle = None
         if self.on_dongle_removed:
-            self.on_dongle_removed()
+            try:
+                self.on_dongle_removed(addrs)
+            except Exception:
+                logger.debug("on_dongle_removed callback failed", exc_info=True)
 
     # ---- 设备池遍历（验收 3.3 末条） ----
     def devices(self) -> List[BaseDevice]:
