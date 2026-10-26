@@ -95,10 +95,39 @@ def test_start_failure_classified():
     assert s["success_rate"] == 50.0
 
 
-def test_stop_failure_classified():
+def test_stop_failure_retried_until_success():
+    """停止失败自动重试：任一次重试成功则本循环计入成功。"""
+    dev = FakeDevice()
+    dev.stop_errs = [ErrCode.FAIL]           # 首次失败，重试成功
+    events = []
+    dev, t = _run(1, dev=dev, events=events)
+    s = t.snapshot()
+    assert s["cycles_total"] == 1
+    assert s["cycles_ok"] == 1               # 重试成功 -> 本循环成功
+    assert s["stop_fail"] == 0
+    assert dev.stop_calls == 2               # 首次 + 1 次重试
+    assert any("重试成功" in e for e in events)
+
+
+def test_stop_failure_retries_exhausted():
+    """重试全部耗尽才判失败；失败只计 1 次（按循环而非按尝试）。"""
+    dev = FakeDevice()
+    dev.stop_errs = [ErrCode.FAIL, ErrCode.FAIL, ErrCode.FAIL]  # 3 次尝试全失败
+    events = []
+    dev, t = _run(1, dev=dev, events=events, stop_retries=2)
+    s = t.snapshot()
+    assert s["cycles_total"] == 1
+    assert s["cycles_ok"] == 0
+    assert s["stop_fail"] == 1
+    assert dev.stop_calls == 3               # 1 + stop_retries 次尝试
+    assert any("尝试 3/3" in e for e in events)
+
+
+def test_stop_failure_classified_no_retry():
+    """stop_retries=0（旧行为）：停止失败直接计失败。"""
     dev = FakeDevice()
     dev.stop_errs = [ErrCode.FAIL]
-    dev, t = _run(2, dev=dev)
+    dev, t = _run(2, dev=dev, stop_retries=0)
     s = t.snapshot()
     assert s["cycles_total"] == 2
     assert s["cycles_ok"] == 1

@@ -13,7 +13,8 @@
     print(tester.log_path)             # 逐循环日志文件
 
 每个循环：start_record -> 随机时长 -> stop_record -> 随机间隔。
-单循环成功定义：start/stop 应答均为 ErrCode.SUCCESS。
+单循环成功定义：start 应答 SUCCESS，且 stop 最终应答 SUCCESS
+（stop 失败自动重试 stop_retries 次，任一次成功即算成功）。
 音频数据由通信层线程回调 note_audio() 统计（线程安全）。
 连续失败超过 max_consecutive_failures 次自动中止（防止设备掉线后刷失败）。
 """
@@ -39,6 +40,7 @@ class RecordStressTester:
                  min_record_s: float = 2.0, max_record_s: float = 8.0,
                  min_gap_s: float = 1.0, max_gap_s: float = 5.0,
                  max_consecutive_failures: int = 5,
+                 stop_retries: int = 3,
                  log_path: Optional[str] = None,
                  on_event: Optional[Callable[[str], None]] = None):
         if min_record_s > max_record_s:
@@ -52,6 +54,7 @@ class RecordStressTester:
         self._min_gap_s = float(min_gap_s)
         self._max_gap_s = float(max_gap_s)
         self._max_consecutive_failures = int(max_consecutive_failures)
+        self._stop_retries = int(stop_retries)  # 停止失败后的额外重试次数
         self._on_event = on_event
 
         self._lock = threading.Lock()
@@ -180,6 +183,35 @@ class RecordStressTester:
             except Exception:
                 pass
 
+    _STOP_RETRY_DELAY_S = 0.2
+
+    def _stop_with_retry(self, tag: str) -> Optional[str]:
+        """发送 stop_record，失败自动重试（共 stop_retries+1 次尝试）。
+
+        返回 None 表示成功；返回最后一次失败的描述（"err=X" 或 "异常: ..."）。
+        每次尝试与重试间隔都可通过 stop() 提前打断。
+        """
+        attempts = self._stop_retries + 1
+        detail = "未知"
+        for attempt in range(1, attempts + 1):
+            if self._stop_flag.is_set() and attempt > 1:
+                break  # 用户已请求停止，不再重试
+            try:
+                err = self._dev.stop_record()
+            except Exception as e:
+                detail = f"异常: {type(e).__name__}: {e}"
+            else:
+                if err == ErrCode.SUCCESS:
+                    if attempt > 1:
+                        self._emit("%s 停止录音第 %d 次重试成功" % (tag, attempt))
+                    return None
+                detail = f"err={err}"
+            self._emit("%s 停止录音失败(%s)，尝试 %d/%d"
+                       % (tag, detail, attempt, attempts))
+            if attempt < attempts:
+                self._stop_flag.wait(self._STOP_RETRY_DELAY_S)
+        return detail
+
     def _run(self, duration_s: Optional[float], max_cycles: Optional[int]) -> None:
         deadline = (time.monotonic() + duration_s) if duration_s else None
         cycle = 0
@@ -191,15 +223,15 @@ class RecordStressTester:
             cycle += 1
             self._do_cycle(cycle)
 
-        # 收尾：若停在录音中，补发 stop 防止设备一直录
+        # 收尾：若停在录音中，补发 stop 防止设备一直录（失败自动重试）
         if self._recording:
             with self._lock:
                 self._recording = False
-            try:
-                err = self._dev.stop_record()
-                self._file_logger.info("收尾补发 stop_record: err=%s", err)
-            except Exception as e:
-                self._file_logger.info("收尾补发 stop_record 异常: %s", e)
+            detail = self._stop_with_retry("[收尾]")
+            if detail is None:
+                self._file_logger.info("收尾补发 stop_record OK")
+            else:
+                self._file_logger.info("收尾补发 stop_record 失败: %s", detail)
 
         s = self.snapshot()
         self._emit(
@@ -237,15 +269,10 @@ class RecordStressTester:
             self._recording = False
             session_audio = self._session_audio
 
-        # ---- STOP ----
-        try:
-            err = self._dev.stop_record()
-        except Exception as e:
-            self._fail(cycle, "停止", f"异常: {type(e).__name__}: {e}",
-                       session_audio=session_audio)
-            return
-        if err != ErrCode.SUCCESS:
-            self._fail(cycle, "停止", f"err={err}", session_audio=session_audio)
+        # ---- STOP（失败自动重试） ----
+        detail = self._stop_with_retry(f"[CYCLE #{cycle}]")
+        if detail is not None:
+            self._fail(cycle, "停止", detail, session_audio=session_audio)
             return
 
         # ---- 成功 ----

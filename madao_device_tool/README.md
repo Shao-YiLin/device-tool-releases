@@ -47,7 +47,7 @@ madao_device_tool/
 │   ├── test_device_config.py 设备配置识别（10项）
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
 │   ├── test_slave_version.py 从机版本号接口（10项）
-│   ├── test_record_test.py   录音压测引擎（8项）
+│   ├── test_record_test.py   录音压测引擎（10项）
 │   └── test_passive_disconnect.py 设备被动断开自动刷新（12项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
@@ -197,6 +197,8 @@ SSID  = "MD_" + hash[0:6] 的大写 HEX              # 12 字符
 - 每个循环：`start_record` → 随机时长录音 → `stop_record` → 随机间隔
 - 成功定义：start/stop 应答均为 `ErrCode.SUCCESS`；音频字节数/含音频会话单独统计
 - 可配置：录音时长范围、间隔范围、总时长（0=不限）、最大循环数（0=不限）
+- 停止失败自动重试（默认再试 3 次，间隔 0.2s）：任一次重试成功本循环计入成功；
+  全部耗尽才判失败（避免设备仍在录音时连锁失败）
 - 连续失败 ≥5 次自动熔断中止（设备掉线后不刷失败）；中途停止会补发 stop 并把
   当次循环计入统计
 - 日志：`logs/record_test_<地址>_<时间>.log`，逐循环结果 + 结束统计快照
