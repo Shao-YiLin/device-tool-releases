@@ -123,6 +123,53 @@ def test_set_rate_roundtrip():
     assert req.payload == bytes([PropKey.POLLING_RATE]) + u32_to_bytes(1000)
 
 
+def test_get_unsynced_file_count_roundtrip():
+    comm = MockComm()
+    dev = MouseDevice(comm)
+
+    def _resp():
+        f = _last_sent_frame(comm)
+        comm.inject_frame(Command.ACK, f.sequence,
+                          u32_to_bytes(ErrCode.SUCCESS) + u32_to_bytes(5))
+
+    threading.Timer(0.05, _resp).start()
+    assert dev.get_unsynced_file_count() == 5
+    req = _last_sent_frame(comm)
+    assert req.cmd == Command.GET_SLAVE_PROP
+    assert req.payload == bytes([PropKey.UNSYNCHED_FILE_COUNT])
+
+
+def test_set_unsynced_file_count_roundtrip():
+    comm = MockComm()
+    dev = MouseDevice(comm)
+
+    def _resp():
+        f = _last_sent_frame(comm)
+        comm.inject_frame(Command.ACK, f.sequence, u32_to_bytes(ErrCode.SUCCESS))
+
+    threading.Timer(0.05, _resp).start()
+    dev.set_unsynced_file_count(7)
+    req = _last_sent_frame(comm)
+    assert req.cmd == Command.SET_SLAVE_PROP
+    assert req.payload == bytes([PropKey.UNSYNCHED_FILE_COUNT]) + u32_to_bytes(7)
+
+
+def test_set_unsynced_file_count_err_raises():
+    comm = MockComm()
+    dev = MouseDevice(comm)
+
+    def _resp():
+        f = _last_sent_frame(comm)
+        comm.inject_frame(Command.ACK, f.sequence, u32_to_bytes(ErrCode.FAIL))
+
+    threading.Timer(0.05, _resp).start()
+    try:
+        dev.set_unsynced_file_count(7)
+        assert False
+    except DeviceError:
+        pass
+
+
 def test_get_device_mac():
     comm = MockComm()
     dev = MouseDevice(comm)

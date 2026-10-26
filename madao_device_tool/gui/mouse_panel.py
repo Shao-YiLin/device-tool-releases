@@ -366,6 +366,14 @@ class MousePanel(QWidget):
         row1.addWidget(self.btn_quick_transfer)
         row1.addWidget(self.btn_get_unsynced)
         row1.addWidget(self.lbl_unsynced_count)
+        # 设置未同步文件数（调试：直接写入设备端计数）
+        self.sp_unsynced_count = QSpinBox()
+        self.sp_unsynced_count.setRange(0, 999999)
+        self.sp_unsynced_count.setToolTip("设置设备端未同步文件数（调试用）")
+        self.btn_set_unsynced = QPushButton("设置未同步数")
+        self.btn_set_unsynced.clicked.connect(self._set_unsynced_file_count)
+        row1.addWidget(self.sp_unsynced_count)
+        row1.addWidget(self.btn_set_unsynced)
         row1.addWidget(self.btn_get_work_mode)
         row1.addWidget(self.lbl_work_mode)
         row1.addStretch()
@@ -571,6 +579,16 @@ class MousePanel(QWidget):
     def _get_unsynced_file_count(self) -> None:
         self._safe_op("get_unsynced_file_count", "get_unsynced_file_count",
                       on_ok=lambda n: self.lbl_unsynced_count.setText(str(n)))
+
+    def _set_unsynced_file_count(self) -> None:
+        count = self.sp_unsynced_count.value()
+
+        def _on_ok(_):
+            self._log(f"未同步文件数已设置为 {count}")
+            self._get_unsynced_file_count()  # 回读刷新显示
+
+        self._safe_op("set_unsynced_file_count", "set_unsynced_file_count",
+                      count, on_ok=_on_ok)
 
     def _get_work_mode(self) -> None:
         def _on_mode(value: int):

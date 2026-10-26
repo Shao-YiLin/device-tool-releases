@@ -208,6 +208,46 @@ def test_mouse_panel_group_renamed_to_am60():
         panel.close()
 
 
+def test_mouse_panel_set_unsynced_file_count():
+    """鼠标面板：AM60 分组有「设置未同步数」输入框 + 按钮，点击派发 set 操作。"""
+    try:
+        from PySide6.QtWidgets import QApplication
+    except ImportError:
+        print("SKIP: PySide6 未安装，跳过 GUI 用例")
+        return
+    _gui_env()
+    app = QApplication.instance() or QApplication([])
+
+    from mouse_panel import MousePanel
+
+    class _StubWorker:
+        def __init__(self):
+            self.calls = []
+
+        def async_op(self, op_id, address, method_name, *args):
+            self.calls.append((op_id, address, method_name, args))
+
+    dev = MouseDevice(MockComm(), address="04:bb", name="AM60")
+    worker = _StubWorker()
+    panel = MousePanel(dev, worker)
+    try:
+        assert panel.sp_unsynced_count is not None
+        assert panel.btn_set_unsynced.text() == "设置未同步数"
+        # 设置数值并点击，应派发 set_unsynced_file_count(count)
+        panel.sp_unsynced_count.setValue(9)
+        panel.btn_set_unsynced.click()
+        assert worker.calls, "点击后应派发后台操作"
+        op_id, _addr, method_name, args = worker.calls[-1]
+        assert method_name == "set_unsynced_file_count"
+        assert args == (9,)
+        # 结果回填：成功后回读（再次派发 get）
+        panel.handle_result(op_id, 0)
+        get_calls = [c for c in worker.calls if c[2] == "get_unsynced_file_count"]
+        assert get_calls, "设置成功后应回读未同步文件数"
+    finally:
+        panel.close()
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

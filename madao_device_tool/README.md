@@ -41,12 +41,12 @@ madao_device_tool/
 │   ├── test_crypto.py     加密算法标准向量（14项）
 │   ├── test_auth.py       鉴权握手流程（5项）
 │   ├── test_ota.py        OTA 加密/分片/流程（5项）
-│   ├── test_device_model.py  设备模型请求-应答（13项）
+│   ├── test_device_model.py  设备模型请求-应答（16项）
 │   ├── test_device_mgr.py    设备管理器（8项）
 │   ├── test_keyboard.py      键盘专属功能（10项）
 │   ├── test_device_config.py 设备配置识别（10项）
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
-│   ├── test_slave_version.py 从机版本号接口（8项）
+│   ├── test_slave_version.py 从机版本号接口（9项）
 │   └── test_passive_disconnect.py 设备被动断开自动刷新（12项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
@@ -170,6 +170,7 @@ pyusb 需要 libusb 后端。Windows 下：
 - **多设备并发 OTA 升级**（非模态升级窗口，多台设备各自独立进度/日志，后台并发执行）
 - **设备被动断开自动刷新**（USB 拔出 / BLE 掉线时设备列表自动移除，无需手动刷新）
 - **从机版本号读取**（AM60 鼠标 / AT80 键盘，GET_SLAVE_PROP[0x1F]）
+- **AM60 未同步文件数 获取/设置**（GET/SET_SLAVE_PROP[0x29]，设置用于同步流程调试）
 
 ### 断链判定策略（避免误判掉线）
 

@@ -103,6 +103,17 @@ class MouseDevice(BaseDevice):
             raise DeviceError(f"未同步文件数量应答长度不足: {len(data)}")
         return bytes_to_u32(data[:4])
 
+    def set_unsynced_file_count(self, count: int) -> int:
+        """设置 AM60 未同步文件数量（配合固件/同步流程调试）。
+
+        SET_SLAVE_PROP key=0x29，value = 数量（4 字节 LE），
+        与 GET 0x29 应答（前 4 字节 LE 为数量）格式对应。
+        """
+        err, _ = self._set_slave_prop(PropKey.UNSYNCHED_FILE_COUNT, u32_to_bytes(count))
+        if err != ErrCode.SUCCESS:
+            raise DeviceError(f"设置未同步文件数量失败 err={err}")
+        return err
+
     # ---- RGB 灯光（仅 G50 / AM40 / AM50 系列 / AM60 支持） ----
     def get_rgb_theme(self) -> Tuple[int, int, int, int]:
         """获取当前 RGB 主题颜色与模式。
