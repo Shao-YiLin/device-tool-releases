@@ -433,6 +433,16 @@ class MousePanel(QWidget):
         row4.addWidget(self.btn_sleep_time_set)
         row4.addStretch()
         v.addLayout(row4)
+
+        # 第五行：快传 WiFi 凭据（打开快传后自动生成显示，供连接热点做传输测试）
+        row5 = QHBoxLayout()
+        row5.addWidget(QLabel("快传 WiFi:"))
+        self.lbl_wifi_info = QLabel("-")
+        self.lbl_wifi_info.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.lbl_wifi_info.setToolTip("打开快传后自动显示热点名称与密码（可选中复制）")
+        row5.addWidget(self.lbl_wifi_info)
+        row5.addStretch()
+        v.addLayout(row5)
         return g
 
     # ---- 图片自适应 ----
@@ -578,6 +588,19 @@ class MousePanel(QWidget):
     def _on_quick_transfer_changed(self, enabled: bool) -> None:
         self.btn_quick_transfer.setText("关闭快传" if enabled else "打开快传")
         self._log(f"快传已{'打开' if enabled else '关闭'}")
+        if enabled:
+            self._load_wifi_credentials()
+        else:
+            self.lbl_wifi_info.setText("-")
+
+    def _load_wifi_credentials(self) -> None:
+        """读取 MAC/product_no 并按 C 端算法生成快传 WiFi SSID/密码。"""
+        def _on_ok(creds):
+            ssid, pwd = creds
+            self.lbl_wifi_info.setText(f"{ssid}  密码: {pwd}")
+            self._log(f"快传 WiFi: {ssid}  密码: {pwd}")
+        self._safe_op("get_wifi_credentials", "get_wifi_credentials",
+                      on_ok=_on_ok)
 
     def _get_unsynced_file_count(self) -> None:
         self._safe_op("get_unsynced_file_count", "get_unsynced_file_count",

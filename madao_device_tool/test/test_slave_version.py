@@ -248,6 +248,50 @@ def test_mouse_panel_set_unsynced_file_count():
         panel.close()
 
 
+def test_mouse_panel_wifi_credentials_display():
+    """打开快传成功后自动生成并显示快传 WiFi SSID/密码，关闭后清空。"""
+    try:
+        from PySide6.QtWidgets import QApplication
+    except ImportError:
+        print("SKIP: PySide6 未安装，跳过 GUI 用例")
+        return
+    _gui_env()
+    app = QApplication.instance() or QApplication([])
+
+    from mouse_panel import MousePanel
+
+    class _StubWorker:
+        def __init__(self):
+            self.calls = []
+
+        def async_op(self, op_id, address, method_name, *args):
+            self.calls.append((op_id, address, method_name, args))
+
+    dev = MouseDevice(MockComm(), address="04:bb", name="AM60")
+    worker = _StubWorker()
+    panel = MousePanel(dev, worker)
+    try:
+        assert panel.lbl_wifi_info.text() == "-"
+        # 打开快传 → 成功 → 自动派发 get_wifi_credentials → 回填显示
+        panel._toggle_quick_transfer()
+        op_id, _addr, method_name, args = worker.calls[-1]
+        assert method_name == "set_quick_transfer" and args == (True,)
+        panel.handle_result(op_id, 0)
+        wifi_calls = [c for c in worker.calls if c[2] == "get_wifi_credentials"]
+        assert wifi_calls, "打开快传成功后应派发获取 WiFi 凭据"
+        panel.handle_result(wifi_calls[-1][0], ("MD_7541B2D09AB7", "5C1B6C985270929C"))
+        text = panel.lbl_wifi_info.text()
+        assert "MD_7541B2D09AB7" in text and "5C1B6C985270929C" in text, text
+        # 关闭快传 → 成功 → 清空显示
+        panel._toggle_quick_transfer()
+        op_id2, _addr2, method_name2, args2 = worker.calls[-1]
+        assert method_name2 == "set_quick_transfer" and args2 == (False,)
+        panel.handle_result(op_id2, 0)
+        assert panel.lbl_wifi_info.text() == "-"
+    finally:
+        panel.close()
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

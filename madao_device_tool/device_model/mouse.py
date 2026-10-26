@@ -13,6 +13,7 @@ protocol_logic_manager.c::_set_dpi 与 AM50 logic_protocol_manager.c::MOUSE_FREQ
 
 from __future__ import annotations
 
+import hashlib
 from typing import Tuple
 
 from comm_lib.protocol.cmd import Command, ErrCode
@@ -27,6 +28,20 @@ RGB_MODE_CLOSE = 0
 RGB_MODE_NORMAL = 1
 RGB_MODE_BREATH = 3
 RGB_MODE_TRIGGER = 4
+
+
+def compute_wifi_credentials(product_no: str, mac: bytes) -> Tuple[str, str]:
+    """快传 WiFi 凭据生成（对齐 C generate_wifi_credentials()）。
+
+    input = 产品编号前 4 字符 + MAC 6 字节的大写 HEX（12 字符）；
+    SHA-256 后：SSID = "MD_" + hash[0:6] 大写 HEX，密码 = hash[6:14] 大写 HEX。
+    """
+    pno = str(product_no or "")[:4]
+    mac_hex = "".join("%02X" % b for b in mac)
+    digest = hashlib.sha256((pno + mac_hex).encode("ascii")).digest()
+    ssid = "MD_" + digest[:6].hex().upper()
+    pwd = digest[6:14].hex().upper()
+    return ssid, pwd
 
 
 class MouseDevice(BaseDevice):
@@ -113,6 +128,21 @@ class MouseDevice(BaseDevice):
         if err != ErrCode.SUCCESS:
             raise DeviceError(f"设置未同步文件数量失败 err={err}")
         return err
+
+    def get_wifi_credentials(self) -> Tuple[str, str]:
+        """快传 WiFi 凭据（SSID + 密码），打开快传后展示供连接热点。
+
+        对齐 C generate_wifi_credentials()：input = 产品编号前 4 字符 +
+        MAC 大写 HEX，SHA-256 后取 hash[0:6] 为 SSID、hash[6:14] 为密码。
+        product_no 缺失时现场读一次；MAC 走 GET_SLAVE_PROP[0x0A]。
+        """
+        pno = str(getattr(self, "product_no", "") or "")
+        if len(pno) < 4:
+            pno = str(self.get_product_no() or "")
+        mac = self.get_device_mac()
+        if not mac or len(mac) != 6:
+            raise DeviceError(f"获取设备 MAC 失败: {mac!r}")
+        return compute_wifi_credentials(pno, mac)
 
     # ---- RGB 灯光（仅 G50 / AM40 / AM50 系列 / AM60 支持） ----
     def get_rgb_theme(self) -> Tuple[int, int, int, int]:

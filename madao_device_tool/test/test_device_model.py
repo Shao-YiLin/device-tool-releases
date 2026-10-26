@@ -170,6 +170,35 @@ def test_set_unsynced_file_count_err_raises():
         pass
 
 
+def test_compute_wifi_credentials_golden():
+    """快传 WiFi 凭据算法对齐 C generate_wifi_credentials()（固定向量）。"""
+    from device_model.mouse import compute_wifi_credentials
+    mac = bytes.fromhex("2C81A7F049FF")
+    ssid, pwd = compute_wifi_credentials("1042", mac)
+    # input="10422C81A7F049FF" 的 SHA-256：hash[0:6] -> SSID, hash[6:14] -> 密码
+    assert ssid == "MD_7541B2D09AB7"
+    assert pwd == "5C1B6C985270929C"
+
+
+def test_get_wifi_credentials_roundtrip():
+    comm = MockComm()
+    dev = MouseDevice(comm)
+    dev.product_no = "1042"
+    mac = bytes.fromhex("2C81A7F049FF")
+
+    def _resp():
+        f = _last_sent_frame(comm)
+        comm.inject_frame(Command.ACK, f.sequence,
+                          u32_to_bytes(ErrCode.SUCCESS) + mac)
+
+    threading.Timer(0.05, _resp).start()
+    ssid, pwd = dev.get_wifi_credentials()
+    assert (ssid, pwd) == ("MD_7541B2D09AB7", "5C1B6C985270929C")
+    req = _last_sent_frame(comm)
+    assert req.cmd == Command.GET_SLAVE_PROP
+    assert req.payload == bytes([PropKey.MAC_MOURSE])
+
+
 def test_get_device_mac():
     comm = MockComm()
     dev = MouseDevice(comm)

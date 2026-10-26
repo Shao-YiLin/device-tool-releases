@@ -41,12 +41,12 @@ madao_device_tool/
 │   ├── test_crypto.py     加密算法标准向量（14项）
 │   ├── test_auth.py       鉴权握手流程（5项）
 │   ├── test_ota.py        OTA 加密/分片/流程（5项）
-│   ├── test_device_model.py  设备模型请求-应答（16项）
+│   ├── test_device_model.py  设备模型请求-应答（18项）
 │   ├── test_device_mgr.py    设备管理器（8项）
 │   ├── test_keyboard.py      键盘专属功能（10项）
 │   ├── test_device_config.py 设备配置识别（10项）
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
-│   ├── test_slave_version.py 从机版本号接口（9项）
+│   ├── test_slave_version.py 从机版本号接口（10项）
 │   ├── test_record_test.py   录音压测引擎（8项）
 │   └── test_passive_disconnect.py 设备被动断开自动刷新（12项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
@@ -172,6 +172,21 @@ pyusb 需要 libusb 后端。Windows 下：
 - **设备被动断开自动刷新**（USB 拔出 / BLE 掉线时设备列表自动移除，无需手动刷新）
 - **从机版本号读取**（AM60 鼠标 / AT80 键盘，GET_SLAVE_PROP[0x1F]）
 - **AM60 未同步文件数 获取/设置**（GET/SET_SLAVE_PROP[0x29]，设置用于同步流程调试）
+- **快传 WiFi 凭据**（打开快传后按 C 端同款算法生成热点名/密码展示，方便连接做传输测试）
+
+## 快传 WiFi 凭据
+
+对齐 C `generate_wifi_credentials()`（`device_model/mouse.py::compute_wifi_credentials`）：
+
+```
+input = 产品编号前 4 字符 + MAC 6 字节大写 HEX     # 如 "1042" + "2C81A7F049FF"
+hash  = SHA-256(input)
+SSID  = "MD_" + hash[0:6] 的大写 HEX              # 12 字符
+密码  = hash[6:14] 的大写 HEX                     # 16 字符
+```
+
+界面：鼠标面板「AM60 专属」→ 点「打开快传」成功后自动读取 MAC 并显示
+`SSID + 密码`（可选中复制）；关闭快传后清空。
 - **录音压测**（随机时长开/关录音循环，长时间运行，实时成功率 + 逐循环日志落盘）
 
 ## 录音压测
