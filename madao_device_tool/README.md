@@ -47,6 +47,7 @@ madao_device_tool/
 │   ├── test_device_config.py 设备配置识别（10项）
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
 │   ├── test_slave_version.py 从机版本号接口（9项）
+│   ├── test_record_test.py   录音压测引擎（8项）
 │   └── test_passive_disconnect.py 设备被动断开自动刷新（12项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
@@ -171,6 +172,19 @@ pyusb 需要 libusb 后端。Windows 下：
 - **设备被动断开自动刷新**（USB 拔出 / BLE 掉线时设备列表自动移除，无需手动刷新）
 - **从机版本号读取**（AM60 鼠标 / AT80 键盘，GET_SLAVE_PROP[0x1F]）
 - **AM60 未同步文件数 获取/设置**（GET/SET_SLAVE_PROP[0x29]，设置用于同步流程调试）
+- **录音压测**（随机时长开/关录音循环，长时间运行，实时成功率 + 逐循环日志落盘）
+
+## 录音压测
+
+鼠标面板「录音压测」按钮打开非模态对话框（引擎 `record_test.py::RecordStressTester`
+可脱离 GUI 单独使用）：
+
+- 每个循环：`start_record` → 随机时长录音 → `stop_record` → 随机间隔
+- 成功定义：start/stop 应答均为 `ErrCode.SUCCESS`；音频字节数/含音频会话单独统计
+- 可配置：录音时长范围、间隔范围、总时长（0=不限）、最大循环数（0=不限）
+- 连续失败 ≥5 次自动熔断中止（设备掉线后不刷失败）；中途停止会补发 stop 并把
+  当次循环计入统计
+- 日志：`logs/record_test_<地址>_<时间>.log`，逐循环结果 + 结束统计快照
 
 ### 断链判定策略（避免误判掉线）
 

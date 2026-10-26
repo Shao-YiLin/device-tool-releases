@@ -250,12 +250,15 @@ class MousePanel(QWidget):
         self.btn_auth.clicked.connect(self._auth)
         self.btn_record = QPushButton("开始录音")
         self.btn_record.clicked.connect(self._toggle_record)
+        self.btn_record_test = QPushButton("录音压测")
+        self.btn_record_test.clicked.connect(self._open_record_test)
         self.btn_ota = QPushButton("固件升级")
         self.btn_ota.clicked.connect(self._open_ota)
         self.btn_disconnect = QPushButton("断开")
         self.btn_disconnect.clicked.connect(self._do_disconnect)
         col.addWidget(self.btn_auth)
         col.addWidget(self.btn_record)
+        col.addWidget(self.btn_record_test)
         col.addWidget(self.btn_ota)
         col.addWidget(self.btn_disconnect)
         col.addStretch()
@@ -693,6 +696,17 @@ class MousePanel(QWidget):
         from ota_dialog import OtaDialog
         self._ota_dialog = OtaDialog([self._dev], self._worker)
         self._ota_dialog.show()
+
+    def _open_record_test(self) -> None:
+        """打开录音压测对话框（非模态；随机开/关录音，统计成功率）。"""
+        from record_test_dialog import RecordTestDialog
+        dlg = getattr(self, "_record_test_dialog", None)
+        if dlg is not None and dlg.isVisible():
+            dlg.raise_()
+            dlg.activateWindow()
+            return
+        self._record_test_dialog = RecordTestDialog(self._dev, parent=self)
+        self._record_test_dialog.show()
 
     # ---- 辅助 ----
     def _safe_op(self, op_id: str, method_name: str, *args,
