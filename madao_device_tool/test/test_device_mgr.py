@@ -230,14 +230,22 @@ def test_get_by_address():
 
 
 def test_probe_single_dongle_never_raises():
-    """单联接收器探针：读不到（异常/空应答）返回空字节，不再拒绝连接。"""
+    """单联接收器探针：读不到（异常/空应答）返回空字节，不再拒绝连接。
+
+    回归：真机 BaseDevice.get_product_no 早期不接受 timeout 参数，
+    探针传 timeout=2.0 会抛 TypeError（探针从未真正发出命令）。
+    """
     from device_mgr import DeviceManager
 
     class _Dev:
+        """签名与真机一致：get_product_no(timeout=...)。"""
+
         def __init__(self, result=None, exc=None):
             self._r, self._e = result, exc
+            self.timeout = None
 
-        def get_product_no(self, timeout=2.0):
+        def get_product_no(self, timeout=5.0):
+            self.timeout = timeout
             if self._e is not None:
                 raise self._e
             return self._r
@@ -246,6 +254,23 @@ def test_probe_single_dongle_never_raises():
     assert probe(_Dev(result=b"1042")) == b"1042"
     assert probe(_Dev(result=b"")) == b""
     assert probe(_Dev(exc=TimeoutError("no answer"))) == b""
+    # timeout 必须真的传下去
+    dev = _Dev(result=b"1042")
+    probe(dev)
+    assert dev.timeout == 2.0
+
+
+def test_base_info_methods_accept_timeout():
+    """get_product_no/get_device_mac/get_device_version 支持 timeout 参数。
+
+    回归：早期 get_product_no 不接受 timeout，探针传 timeout=2.0 直接
+    TypeError（命令从未发出），导致设备被误判为"未验证"。
+    """
+    import inspect
+    from device_model import BaseDevice
+    for name in ("get_product_no", "get_device_mac", "get_device_version"):
+        sig = inspect.signature(getattr(BaseDevice, name))
+        assert "timeout" in sig.parameters, f"{name} 缺少 timeout 参数"
 
 
 def test_is_known_device_name():

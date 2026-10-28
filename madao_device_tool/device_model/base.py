@@ -191,34 +191,34 @@ class BaseDevice:
         return self.send_and_wait(Command.SET_SLAVE_PROP, bytes([prop_key]) + value_bytes, timeout)
 
     # ---- 基础信息读写（验收 3.3 首条） ----
-    def get_product_no(self) -> bytes:
+    def get_product_no(self, timeout: float = 5.0) -> bytes:
         """获取设备产品系列编码（4 字节）。
 
         对齐 protocol_logic_manager.c::_get_productNo。
         """
-        err, data = self._get_slave_prop(PropKey.PRODUCT_NO)
+        err, data = self._get_slave_prop(PropKey.PRODUCT_NO, timeout=timeout)
         if err != ErrCode.SUCCESS or len(data) < 4:
             raise DeviceError(f"获取 product_no 失败 err={err}")
         self.product_no = bytes(data[:4])
         return self.product_no
 
-    def get_device_mac(self) -> bytes:
+    def get_device_mac(self, timeout: float = 5.0) -> bytes:
         """获取设备 MAC 地址（6 字节）。
 
         对齐 protocol_logic_manager.c::_get_mac_address(MAC_MOURSE_DATA)。
         """
-        err, data = self._get_slave_prop(PropKey.MAC_MOURSE)
+        err, data = self._get_slave_prop(PropKey.MAC_MOURSE, timeout=timeout)
         if err != ErrCode.SUCCESS or len(data) < 6:
             raise DeviceError(f"获取 device_mac 失败 err={err}")
         self.device_mac = bytes(data[:6])
         return self.device_mac
 
-    def get_device_version(self) -> int:
+    def get_device_version(self, timeout: float = 5.0) -> int:
         """获取设备版本号（u32）。
 
         对齐 protocol_logic_manager.c::_get_version(VERSION_MOURSE_DATA)。
         """
-        err, data = self._get_slave_prop(PropKey.VERSION_MOURSE)
+        err, data = self._get_slave_prop(PropKey.VERSION_MOURSE, timeout=timeout)
         if err != ErrCode.SUCCESS or len(data) < 4:
             raise DeviceError(f"获取 device_version 失败 err={err}")
         ver = bytes_to_u32(data[:4])
