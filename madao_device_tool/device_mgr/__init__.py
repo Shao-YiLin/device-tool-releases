@@ -309,10 +309,11 @@ class DeviceManager:
         device = self._make_device(comm, info)
 
         # 单联接收器（device_type=1）：连上后验证是否真的有子设备
-        # 读不到 ProductNo 说明接收器没连子设备，不显示
+        # 读不到 ProductNo 说明接收器没连子设备，不显示。
+        # 超时 2s（本地 USB RTT 通常 <50ms；空载接收器不再占 worker 队列 5s）
         if info.device_type == USB_DEVICE_TYPE_SINGLE_DONGLE:
             try:
-                product_no = device.get_product_no()
+                product_no = device.get_product_no(timeout=2.0)
                 if not product_no:
                     comm.disconnect()
                     self._all_comms.remove(comm)

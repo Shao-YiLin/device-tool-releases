@@ -48,6 +48,7 @@ madao_device_tool/
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
 │   ├── test_slave_version.py 从机版本号接口（10项）
 │   ├── test_record_test.py   录音压测引擎（10项）
+│   └── test_device_worker_pool.py 并行 worker 池桶路由（4项）
 │   └── test_passive_disconnect.py 设备被动断开自动刷新（12项）
 ├── cli.py                 命令行工具（交互式 REPL + 非交互模式）
 ├── exceptions.py          统一异常体系
@@ -173,6 +174,18 @@ pyusb 需要 libusb 后端。Windows 下：
 - **从机版本号读取**（AM60 鼠标 / AT80 键盘，GET_SLAVE_PROP[0x1F]）
 - **AM60 未同步文件数 获取/设置**（GET/SET_SLAVE_PROP[0x29]，设置用于同步流程调试）
 - **快传 WiFi 凭据**（打开快传后按 C 端同款算法生成热点名/密码展示，方便连接做传输测试）
+
+## 性能优化（多设备场景）
+
+- **并行 worker 池**（device_worker.py::DeviceWorkerPool）：操作按桶并行——
+  连接/断开全局串行（一个连接慢不阻塞已连设备）、扫描独立、每设备读写各一桶；
+  多联接收器子设备共享通道归 `__dongle__` 桶串行
+- **空载接收器探针 2s**：单联接收器连接时的 product_no 探针超时 5s→2s
+- **BLE 自动连接过滤**：扫描后只自动连接本厂设备名（键盘关键字/MD/AM 系），
+  不再逐个尝试耳机等无关已配对设备；手动双击连接不受限
+- **dongle 连接走 worker**：多联接收器通道建立在后台线程，不卡 UI
+- **面板刷新分级**：product_no/电池/CPI/回报率立即读，AM60 次要设置项
+  （触感/从机版本/屏幕休眠/设备休眠/灯光主题）延后 1.5s 再读
 
 ## 快传 WiFi 凭据
 

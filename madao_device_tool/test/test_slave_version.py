@@ -292,6 +292,58 @@ def test_mouse_panel_wifi_credentials_display():
         panel.close()
 
 
+def test_mouse_panel_refresh_staged():
+    """初始刷新分级：product_no 回来先读关键项，次要设置项延后读。"""
+    try:
+        from PySide6.QtWidgets import QApplication
+    except ImportError:
+        print("SKIP: PySide6 未安装，跳过 GUI 用例")
+        return
+    _gui_env()
+    app = QApplication.instance() or QApplication([])
+
+    import time
+    import mouse_panel as mp_module
+    from mouse_panel import MousePanel
+
+    class _StubWorker:
+        def __init__(self):
+            self.calls = []
+
+        def async_op(self, op_id, address, method_name, *args):
+            self.calls.append((op_id, address, method_name, args))
+
+    dev = MouseDevice(MockComm(), address="04:cc", name="AM60")
+    worker = _StubWorker()
+    panel = MousePanel(dev, worker)
+    old_delay = mp_module._EXTRAS_REFRESH_DELAY_MS
+    try:
+        mp_module._EXTRAS_REFRESH_DELAY_MS = 10  # 测试缩短延后间隔
+        # 构造时已派发基础读取；取 get_product_no 的 op_id 回填，触发级联
+        pno_op = [c for c in worker.calls if c[2] == "get_product_no"][-1][0]
+        panel.handle_result(pno_op, b"1042")
+        methods_now = [c[2] for c in worker.calls]
+        assert "get_work_mode" in methods_now
+        assert "get_cpi" in methods_now
+        assert "get_rate" in methods_now
+        assert "get_touch_sensitivity" not in methods_now, "次要项应延后"
+        assert "get_slave_device_version" not in methods_now, "次要项应延后"
+        # 等延后定时器触发
+        deadline = time.time() + 2
+        while time.time() < deadline:
+            app.processEvents()
+            if any(c[2] == "get_touch_sensitivity" for c in worker.calls):
+                break
+            time.sleep(0.01)
+        methods_after = [c[2] for c in worker.calls]
+        for m in ("get_touch_sensitivity", "get_slave_device_version",
+                  "get_slave_screen_sleep", "get_sleep_time"):
+            assert m in methods_after, f"延后读取应触发: {m}"
+    finally:
+        mp_module._EXTRAS_REFRESH_DELAY_MS = old_delay
+        panel.close()
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

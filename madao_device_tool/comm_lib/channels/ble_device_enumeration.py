@@ -77,6 +77,10 @@ def filter_target_devices(devices: List[DeviceInfo]) -> List[DeviceInfo]:
 # 蓝牙名称中可识别为键盘的关键字；其余默认按鼠标处理。
 _KEYBOARD_NAME_KEYWORDS = ("t8", "t9", "t6", "d1", "n2", "n3", "n8", "k1", "at80")
 
+# 本厂设备名识别（扫描后自动连接过滤用）：键盘关键字 + 鼠标常见前缀。
+# 避免把耳机/手柄等系统已配对的无关 BLE 设备也尝试连一遍。
+_OWNED_NAME_KEYWORDS = _KEYBOARD_NAME_KEYWORDS + ("md", "am50", "am60", "madao")
+
 
 def infer_device_type_from_ble_name(name: str) -> int:
     """根据蓝牙设备名称推断设备类型（0x31=鼠标 / 0x32=键盘）。
@@ -89,3 +93,9 @@ def infer_device_type_from_ble_name(name: str) -> int:
         if kw in name_lower:
             return 0x32
     return 0x31
+
+
+def is_known_device_name(name: str) -> bool:
+    """设备名是否像本厂设备（自动连接过滤，避免连到耳机等无关设备）。"""
+    name_lower = (name or "").lower()
+    return bool(name_lower) and any(kw in name_lower for kw in _OWNED_NAME_KEYWORDS)

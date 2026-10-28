@@ -229,6 +229,21 @@ def test_get_by_address():
     assert mgr.get("Y") is None
 
 
+def test_is_known_device_name():
+    """BLE 自动连接的名字过滤：本厂设备名通过，耳机/空名被排除。"""
+    from comm_lib.channels.ble_device_enumeration import is_known_device_name
+    # 键盘关键字
+    assert is_known_device_name("T8 键盘")
+    assert is_known_device_name("AT80")
+    # 鼠标前缀
+    assert is_known_device_name("MD_7541B2D09AB7")
+    assert is_known_device_name("AM60")
+    # 非本厂 / 空名 / None
+    assert not is_known_device_name("WH-1000XM4")
+    assert not is_known_device_name("")
+    assert not is_known_device_name(None)
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     passed = 0

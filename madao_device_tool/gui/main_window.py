@@ -33,10 +33,13 @@ from PySide6.QtWidgets import (
 )
 
 from comm_lib.channels import DeviceInfo
-from comm_lib.channels.ble_device_enumeration import infer_device_type_from_ble_name
+from comm_lib.channels.ble_device_enumeration import (
+    infer_device_type_from_ble_name,
+    is_known_device_name,
+)
 from device_model import BaseDevice, KbDevice, MouseDevice
 from devtool import DeviceTool
-from device_worker import DeviceWorker, make_worker_thread
+from device_worker import make_worker_pool
 from keyboard_panel import KeyboardPanel
 from mouse_panel import MousePanel
 import record_config
@@ -62,7 +65,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1100, 700)
 
         self._tool = DeviceTool()
-        self._thread, self._worker = make_worker_thread(self)
+        self._worker = make_worker_pool(self)
         self._worker.set_tool(self._tool)
 
         # address -> DeviceInfo（扫描到的，含 BLE/USB 未连接项）
@@ -206,6 +209,7 @@ class MainWindow(QMainWindow):
 
         self._worker.device_found.connect(self._on_device_found)
         self._worker.connected.connect(self._on_connected)
+        self._worker.dongle_connected.connect(self._on_dongle_connected)
         self._worker.disconnected.connect(self._on_disconnected)
         self._worker.operation_result.connect(self._on_operation_result)
         self._worker.error.connect(self._on_error)
@@ -382,6 +386,11 @@ class MainWindow(QMainWindow):
             if addr in self._connected:
                 continue
             if info.transport == "ble":
+                # 只自动连接本厂设备（按名字识别），避免把耳机等
+                # 系统已配对的无关 BLE 设备也逐个尝试连接（各耗一个超时周期）
+                if not is_known_device_name(info.name):
+                    self._log(f"跳过非本厂 BLE 设备: {info.name or addr}")
+                    continue
                 dtype = infer_device_type_from_ble_name(info.name)
                 self._worker.async_connect_ble_bonded(addr, name=info.name, device_type=dtype)
             else:
@@ -392,12 +401,10 @@ class MainWindow(QMainWindow):
                 self._worker.async_connect(info)
 
     def _ensure_dongle(self, info: DeviceInfo) -> None:
-        """建立多联接收器连接并显示管理面板（若无）。"""
-        try:
-            self._tool.connect_dongle_only(info)
-        except Exception as e:
-            self._log(f"连接多联接收器失败: {e}", "ERROR")
-            return
+        """建立多联接收器连接并显示管理面板（若无）。走 worker 线程，不卡 UI。"""
+        self._worker.async_connect_dongle(info)
+
+    def _on_dongle_connected(self, dongle) -> None:
         self._sync_dongle_panel()
         self._log("已连接多联接收器")
 
@@ -689,9 +696,7 @@ class MainWindow(QMainWindow):
                 listener.stop()
             if self._dongle_panel is not None:
                 self._dongle_panel.teardown()
-            self._worker.set_tool  # noqa: just ensure worker exists
-            self._thread.quit()
-            self._thread.wait(2000)
+            self._worker.shutdown()
             self._tool.close()
         except Exception:
             logger.exception("关闭时异常")

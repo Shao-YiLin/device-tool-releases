@@ -384,6 +384,58 @@ def _run_all():
     print(f"\n{'=' * 40}\n通过: {len(fns) - failed}, 失败: {failed}")
     return 1 if failed else 0
 
+# ---------------------------------------------------------------------------
+
+def test_auto_connect_skips_unknown_ble():
+    """扫描后自动连接只连本厂设备名，跳过耳机等无关 BLE 设备。"""
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    try:
+        from PySide6.QtWidgets import QApplication
+    except ImportError:
+        print("SKIP: PySide6 未安装，跳过 GUI 用例")
+        return
+    gui_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "gui")
+    if gui_dir not in sys.path:
+        sys.path.insert(0, gui_dir)
+
+    app = QApplication.instance() or QApplication([])
+    from main_window import MainWindow
+    from comm_lib.channels import DeviceInfo
+
+    w = MainWindow()
+    real_worker = w._worker
+    try:
+        calls = []
+
+        class _StubWorker:
+            def async_connect_ble_bonded(self, *a, **k):
+                calls.append(("ble",) + a)
+
+            def async_connect(self, *a, **k):
+                calls.append(("usb",) + a)
+
+        w._worker = _StubWorker()
+        # 非本厂名字：跳过
+        w._on_device_found([DeviceInfo("ble", "aa:bb:cc:dd:ee:01",
+                                       name="WH-1000XM4", device_type=0x32)])
+        assert calls == [], "无关 BLE 设备不应自动连接"
+        # 空名：跳过
+        w._on_device_found([DeviceInfo("ble", "aa:bb:cc:dd:ee:02",
+                                       name="", device_type=0x32)])
+        assert calls == [], "空名 BLE 设备不应自动连接"
+        # 本厂名字：连接
+        w._on_device_found([DeviceInfo("ble", "aa:bb:cc:dd:ee:03",
+                                       name="T8", device_type=0x32)])
+        assert calls and calls[0][0] == "ble"
+        # USB 设备不受过滤影响
+        w._on_device_found([DeviceInfo("usb", "4:8", name="USB",
+                                       device_type=3)])
+        assert any(c[0] == "usb" for c in calls)
+        app.processEvents()
+    finally:
+        w._worker = real_worker
+        w.close()
+
 
 if __name__ == "__main__":
     sys.exit(_run_all())

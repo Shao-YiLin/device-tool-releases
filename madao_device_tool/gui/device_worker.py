@@ -26,6 +26,7 @@ class DeviceWorker(QObject):
     # ---- 回传信号（worker 线程 -> 主线程）----
     device_found = Signal(list)        # List[DeviceInfo]
     connected = Signal(object)         # BaseDevice
+    dongle_connected = Signal(object)  # UsbComm（多联接收器通道）
     disconnected = Signal(str)         # address
     operation_result = Signal(str, object)  # (op_id, result)
     error = Signal(str, str)           # (op_id, message)
@@ -36,6 +37,7 @@ class DeviceWorker(QObject):
     do_scan_ble = Signal(float)
     do_scan_ble_bonded = Signal()
     do_connect = Signal(object)        # DeviceInfo
+    do_connect_dongle = Signal(object)  # DeviceInfo（多联接收器通道）
     do_disconnect = Signal(str)
     do_op = Signal(str, str, tuple, dict)  # (op_id, address, args, kwargs)
 
@@ -47,6 +49,7 @@ class DeviceWorker(QObject):
         self.do_scan_ble.connect(self._exec_scan_ble)
         self.do_scan_ble_bonded.connect(self._exec_scan_ble_bonded)
         self.do_connect.connect(self._exec_connect)
+        self.do_connect_dongle.connect(self._exec_connect_dongle)
         self.do_disconnect.connect(self._exec_disconnect)
         self.do_op.connect(self._exec_op)
 
@@ -71,6 +74,10 @@ class DeviceWorker(QObject):
 
     def async_connect(self, info: DeviceInfo, op_id: str = "connect") -> None:
         self.do_connect.emit(info)
+
+    def async_connect_dongle(self, info: DeviceInfo) -> None:
+        """连接多联接收器（只建通道，不作为子设备）。"""
+        self.do_connect_dongle.emit(info)
 
     def async_connect_ble_bonded(self, mac: str, name: str = "", device_type: int = 0x32,
                                  op_id: str = "connect_ble") -> None:
@@ -170,6 +177,14 @@ class DeviceWorker(QObject):
         except Exception as e:
             self.error.emit("disconnect", f"断开失败: {e}")
 
+    @Slot(object)
+    def _exec_connect_dongle(self, info: DeviceInfo) -> None:
+        try:
+            dongle = self.tool.connect_dongle_only(info)
+            self.dongle_connected.emit(dongle)
+        except Exception as e:
+            self.error.emit("connect_dongle", f"连接多联接收器失败: {e}")
+
     @Slot(str, str, tuple, dict)
     def _exec_op(self, op_id: str, address: str, args: tuple, payload: dict) -> None:
         method_name = payload.get("_method", op_id)
@@ -191,13 +206,109 @@ class DeviceWorker(QObject):
             self.error.emit(op_id, f"{method_name} 异常: {e}")
 
 
-def make_worker_thread(parent: Optional[QObject] = None) -> tuple[QThread, DeviceWorker]:
-    """创建后台线程 + worker，并 moveToThread。返回 (thread, worker)。
+class DeviceWorkerPool(QObject):
+    """按桶并行的 worker 池：同桶内串行，跨桶并行（多设备场景核心优化）。
 
-    调用方负责 thread.start() / thread.quit() + wait()。
+    桶划分：
+      - "connect"  连接/断开/接收器通道建立，全局串行：
+        某个连接慢（如空载接收器探针超时）不会阻塞已连设备的读写
+      - "scan"     USB/BLE 扫描
+      - 设备地址   每个设备一桶，读写操作互不阻塞；
+        多联接收器子设备共享 dongle 通道，统一归 "__dongle__" 桶串行
     """
-    thread = QThread(parent=parent)
-    worker = DeviceWorker()
-    worker.moveToThread(thread)
-    thread.start()
-    return thread, worker
+
+    device_found = Signal(list)
+    connected = Signal(object)
+    dongle_connected = Signal(object)
+    disconnected = Signal(str)
+    operation_result = Signal(str, object)
+    error = Signal(str, str)
+
+    def __init__(self, tool: Optional[DeviceTool] = None,
+                 parent: Optional[QObject] = None) -> None:
+        super().__init__(parent)
+        self._tool = tool
+        self._buckets = {}  # key -> (QThread, DeviceWorker)
+        for key in ("connect", "scan"):
+            self._ensure_bucket(key)
+
+    # ---- 桶管理 ----
+    def _ensure_bucket(self, key: str) -> DeviceWorker:
+        if key in self._buckets:
+            return self._buckets[key][1]
+        thread = QThread(self)
+        worker = DeviceWorker(self._tool)
+        worker.moveToThread(thread)
+        # 桶内 worker 的信号统一汇聚到池信号
+        worker.device_found.connect(self.device_found)
+        worker.connected.connect(self.connected)
+        worker.dongle_connected.connect(self.dongle_connected)
+        worker.disconnected.connect(self.disconnected)
+        worker.operation_result.connect(self.operation_result)
+        worker.error.connect(self.error)
+        thread.start()
+        self._buckets[key] = (thread, worker)
+        return worker
+
+    def _bucket_key_for_address(self, address: str) -> str:
+        if not address:
+            return "misc"
+        try:
+            dev = self.tool.get_device(address)
+        except Exception:
+            dev = None
+        if dev is not None and getattr(dev, "connection_type", "") == "usb_dongle":
+            return "__dongle__"  # 子设备共享 dongle 通道，必须串行
+        return address
+
+    @property
+    def tool(self) -> DeviceTool:
+        if self._tool is None:
+            self._tool = DeviceTool()
+        return self._tool
+
+    def set_tool(self, tool: DeviceTool) -> None:
+        self._tool = tool
+        for _thread, worker in self._buckets.values():
+            worker.set_tool(tool)
+
+    def shutdown(self) -> None:
+        for thread, _worker in self._buckets.values():
+            thread.quit()
+            thread.wait(2000)
+
+    # ---- 与 DeviceWorker 相同的调用面（按桶路由）----
+    def async_scan_usb(self, op_id: str = "scan_usb") -> None:
+        self._ensure_bucket("scan").async_scan_usb(op_id)
+
+    def async_scan_ble(self, timeout: float = 5.0, op_id: str = "scan_ble") -> None:
+        self._ensure_bucket("scan").async_scan_ble(timeout, op_id)
+
+    def async_scan_ble_bonded(self, op_id: str = "scan_ble_bonded") -> None:
+        self._ensure_bucket("scan").async_scan_ble_bonded(op_id)
+
+    def async_connect(self, info: DeviceInfo, op_id: str = "connect") -> None:
+        self._ensure_bucket("connect").async_connect(info, op_id)
+
+    def async_connect_dongle(self, info: DeviceInfo) -> None:
+        self._ensure_bucket("connect").async_connect_dongle(info)
+
+    def async_connect_ble_bonded(self, mac: str, name: str = "",
+                                 device_type: int = 0x32,
+                                 op_id: str = "connect_ble") -> None:
+        # 内部自起线程不占队列，挂在 connect 桶的 worker 上
+        self._ensure_bucket("connect").async_connect_ble_bonded(
+            mac, name=name, device_type=device_type, op_id=op_id)
+
+    def async_disconnect(self, address: str, op_id: str = "disconnect") -> None:
+        self._ensure_bucket("connect").async_disconnect(address, op_id)
+
+    def async_op(self, op_id: str, address: str,
+                 method_name: str, *args, **kwargs) -> None:
+        worker = self._ensure_bucket(self._bucket_key_for_address(address))
+        worker.async_op(op_id, address, method_name, *args, **kwargs)
+
+
+def make_worker_pool(parent: Optional[QObject] = None) -> DeviceWorkerPool:
+    """创建按桶并行的 worker 池。调用方负责 shutdown()。"""
+    return DeviceWorkerPool(parent=parent)

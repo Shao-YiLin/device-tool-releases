@@ -11,7 +11,7 @@ import struct
 from datetime import datetime
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
     QColorDialog,
@@ -36,6 +36,10 @@ import _bootstrap
 from _bootstrap import resource_path
 
 _IMG_DIR = resource_path("assets", "images")
+
+# 面板初始刷新分级：次要设置项延后读取的间隔（ms）。
+# 设备刚连上时操作队列忙（多设备场景），先保证关键项（product_no/电池/CPI）先回来。
+_EXTRAS_REFRESH_DELAY_MS = 1500
 
 
 # 灯光模式映射（对齐设备端 device_config_set_rgb）
@@ -107,6 +111,12 @@ class MousePanel(QWidget):
         self._record_bytes = 0
         self._last_logged_bytes = 0
         self._record_format_seen = False
+        self._is_am60 = False      # product_no 回来后置位（延后读取用）
+        self._has_light = False
+        # 次要设置项延后读取的定时器（parent=self，随面板销毁，无悬挂回调）
+        self._extras_timer = QTimer(self)
+        self._extras_timer.setSingleShot(True)
+        self._extras_timer.timeout.connect(self._refresh_extras_async)
         self._build_ui()
         self._refresh_base_async()
         self._setup_audio_callback()
@@ -491,19 +501,15 @@ class MousePanel(QWidget):
             if self._on_name_changed:
                 self._on_name_changed()
             # AM60 (product_no == "1042") 才显示专属功能，并主动获取工作模式
-            is_am60 = (pn_str == "1042")
-            self._am60_group.setVisible(is_am60)
-            if is_am60:
+            self._is_am60 = (pn_str == "1042")
+            self._am60_group.setVisible(self._is_am60)
+            if self._is_am60:
                 self._get_work_mode()
-                self._read_touch_sensitivity()
-                self._read_slave_device_version()
-                self._read_screen_sleep()
-                self._read_sleep_time()
-            # 支持灯光的鼠标显示灯光设置并主动获取一次主题色
-            has_light = supports_light(pn_str)
-            self._light_group.setVisible(has_light)
-            if has_light:
-                self._read_light_theme()
+            # 支持灯光的鼠标显示灯光设置（主题色延后读）
+            self._has_light = supports_light(pn_str)
+            self._light_group.setVisible(self._has_light)
+            # 次要设置项延后读取：设备刚连上时操作队列忙（多设备场景）
+            self._extras_timer.start(_EXTRAS_REFRESH_DELAY_MS)
             # 确认是鼠标后再读 CPI / 回报率（避免对键盘设备误调）
             self._read_cpi()
             self._read_rate()
@@ -515,6 +521,18 @@ class MousePanel(QWidget):
                       on_ok=lambda v: self.lbl_version.setText(_format_version(v) if isinstance(v, int) else str(v)))
         self._safe_op("get_battery", "get_battery",
                       on_ok=lambda v: self.lbl_battery.setText(str(v)))
+
+    def _refresh_extras_async(self) -> None:
+        """延后读取次要设置项（AM60 组显示项 + 灯光主题）。"""
+        if not self._dev.is_connected:
+            return
+        if self._is_am60:
+            self._read_touch_sensitivity()
+            self._read_slave_device_version()
+            self._read_screen_sleep()
+            self._read_sleep_time()
+        if self._has_light:
+            self._read_light_theme()
 
     # ---- 操作 ----
     def _read_cpi(self) -> None:
