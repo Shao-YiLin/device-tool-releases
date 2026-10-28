@@ -230,14 +230,16 @@ def test_get_by_address():
 
 
 def test_is_known_device_name():
-    """BLE 自动连接的名字过滤：本厂设备名通过，耳机/空名被排除。"""
-    from comm_lib.channels.ble_device_enumeration import is_known_device_name
-    # 键盘关键字
-    assert is_known_device_name("T8 键盘")
-    assert is_known_device_name("AT80")
-    # 鼠标前缀
-    assert is_known_device_name("MD_7541B2D09AB7")
+    """BLE 自动连接的名字过滤：注册表产品名/键盘关键字通过，无关设备排除。"""
+    from device_config import is_known_device_name
+    # 用户实测被误杀的两台本厂设备（旧名 + 注册表产品）
+    assert is_known_device_name("LM20(E1:29)")
+    assert is_known_device_name("M610 Ultra(06:00)")  # 1042 旧广播名，含注册名 M610
+    # 注册表产品 / 键盘关键字 / 公司名
     assert is_known_device_name("AM60")
+    assert is_known_device_name("AT80")
+    assert is_known_device_name("T8 键盘")
+    assert is_known_device_name("LM10")  # 注册表其他产品
     # 非本厂 / 空名 / None
     assert not is_known_device_name("WH-1000XM4")
     assert not is_known_device_name("")

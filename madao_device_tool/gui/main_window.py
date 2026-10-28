@@ -33,10 +33,8 @@ from PySide6.QtWidgets import (
 )
 
 from comm_lib.channels import DeviceInfo
-from comm_lib.channels.ble_device_enumeration import (
-    infer_device_type_from_ble_name,
-    is_known_device_name,
-)
+from comm_lib.channels.ble_device_enumeration import infer_device_type_from_ble_name
+from device_config import is_known_device_name
 from device_model import BaseDevice, KbDevice, MouseDevice
 from devtool import DeviceTool
 from device_worker import make_worker_pool

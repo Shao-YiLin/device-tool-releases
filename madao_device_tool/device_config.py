@@ -188,3 +188,30 @@ def infer_device_type(product_no_str: str) -> str:
     if cfg:
         return cfg.get("type", "other")
     return "other"
+
+
+# BLE 名识别用：注册表全部产品名（小写去重），模块加载时构建一次
+_REGISTERED_NAME_LOWERCASE = tuple(sorted(
+    {str(cfg.get("name", "")).strip().lower()
+     for cfg in _DEVICES.values() if cfg.get("name")} - {""}
+))
+
+
+def is_known_device_name(name: str) -> bool:
+    """BLE 设备名是否像本厂设备（扫描后自动连接过滤用）。
+
+    匹配源（子串匹配；BLE 名常带 MAC 后缀如 "M610 Ultra(E1:29)"，
+    且可能仍是改名前的旧产品名，如 1042 广播 "M610 Ultra"）：
+      - device_config 注册表全部产品名（LM20/M610/AM50/M110/T8/...）
+      - 键盘蓝牙名关键字（T8/T9/AT80/...，来自 ble_device_enumeration）
+      - 公司名 madao
+    """
+    n = (name or "").lower()
+    if not n:
+        return False
+    if "madao" in n:
+        return True
+    from comm_lib.channels.ble_device_enumeration import _KEYBOARD_NAME_KEYWORDS
+    if any(kw in n for kw in _KEYBOARD_NAME_KEYWORDS):
+        return True
+    return any(nm in n for nm in _REGISTERED_NAME_LOWERCASE)
