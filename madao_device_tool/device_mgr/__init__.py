@@ -308,24 +308,29 @@ class DeviceManager:
         self._all_comms.append(comm)  # 持有引用防 GC
         device = self._make_device(comm, info)
 
-        # 单联接收器（device_type=1）：连上后验证是否真的有子设备
-        # 读不到 ProductNo 说明接收器没连子设备，不显示。
-        # 超时 2s（本地 USB RTT 通常 <50ms；空载接收器不再占 worker 队列 5s）
+        # 单联接收器（device_type=1）：读 product_no 验证是否真的有子设备。
+        # 读不到有两种可能：a) 空载接收器（没挂子设备）；
+        # b) 设备类型标志写错（USB 设备被固件标成接收器）。
+        # 二者无法区分，不再拒绝连接——仍注册设备，名字带"(未验证)"标记。
+        # 超时 2s（本地 USB RTT 通常 <50ms；空载接收器不占 worker 队列太久）
         if info.device_type == USB_DEVICE_TYPE_SINGLE_DONGLE:
-            try:
-                product_no = device.get_product_no(timeout=2.0)
-                if not product_no:
-                    comm.disconnect()
-                    self._all_comms.remove(comm)
-                    return None
-                device.product_no = product_no
-            except Exception:
-                comm.disconnect()
-                self._all_comms.remove(comm)
-                return None
+            product_no = self._probe_single_dongle_product_no(device)
+            device.product_no = product_no
+            if not product_no:
+                device.name = f"{info.name or device.address} (未验证)"
 
         self._register(device, info.address)
         return device
+
+    @staticmethod
+    def _probe_single_dongle_product_no(device: BaseDevice) -> bytes:
+        """单联接收器探针：读 product_no；读不到返回空（不抛异常）。"""
+        try:
+            return device.get_product_no(timeout=2.0) or b""
+        except Exception as e:
+            logger.warning(
+                "device_type=1 未读到 product_no（空载接收器或类型标志写错）: %s", e)
+            return b""
 
     def _connect_dongle_sub(self, info: UsbDeviceInfo) -> BaseDevice:
         mac = info.extra.get("mac")

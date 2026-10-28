@@ -229,6 +229,25 @@ def test_get_by_address():
     assert mgr.get("Y") is None
 
 
+def test_probe_single_dongle_never_raises():
+    """单联接收器探针：读不到（异常/空应答）返回空字节，不再拒绝连接。"""
+    from device_mgr import DeviceManager
+
+    class _Dev:
+        def __init__(self, result=None, exc=None):
+            self._r, self._e = result, exc
+
+        def get_product_no(self, timeout=2.0):
+            if self._e is not None:
+                raise self._e
+            return self._r
+
+    probe = DeviceManager._probe_single_dongle_product_no
+    assert probe(_Dev(result=b"1042")) == b"1042"
+    assert probe(_Dev(result=b"")) == b""
+    assert probe(_Dev(exc=TimeoutError("no answer"))) == b""
+
+
 def test_is_known_device_name():
     """BLE 自动连接的名字过滤：注册表产品名/键盘关键字通过，无关设备排除。"""
     from device_config import is_known_device_name
