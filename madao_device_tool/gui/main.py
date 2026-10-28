@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 
@@ -34,7 +35,12 @@ def main() -> int:
     app.setApplicationName("Madao Device Tool")
     win = MainWindow()
     win.show()
-    return app.exec()
+    code = app.exec()
+    # 关窗后强制结束进程：残留的 QThread/RX 线程（非守护）会吊住进程，
+    # 变成无窗口僵尸并继续占住 USB 句柄，导致下次启动
+    # claim 报 Access denied（表现为"扫描得到但全部连接失败"，极难排查）
+    logging.shutdown()
+    os._exit(code if isinstance(code, int) else 0)
 
 
 if __name__ == "__main__":
