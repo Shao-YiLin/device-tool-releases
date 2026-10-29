@@ -225,6 +225,27 @@ class BaseDevice:
         self.device_version = data[:4]
         return ver
 
+    def get_sleep_time(self) -> int:
+        """获取设备休眠时间（秒）。
+
+        cmd=GET_SLAVE_PROP, payload=[SLEEP_TIME(0x10)]
+        应答 4 字节 LE 秒数。
+        """
+        err, data = self._get_slave_prop(PropKey.SLEEP_TIME)
+        if err != ErrCode.SUCCESS or len(data) < 4:
+            raise DeviceError(f"获取休眠时间失败 err={err}")
+        return bytes_to_u32(data[:4])
+
+    def set_sleep_time(self, seconds: int) -> int:
+        """设置设备休眠时间（秒）。
+
+        cmd=SET_SLAVE_PROP, payload=[SLEEP_TIME(0x10)][seconds(4 LE)]
+        """
+        err, _ = self._set_slave_prop(PropKey.SLEEP_TIME, u32_to_bytes(seconds))
+        if err != ErrCode.SUCCESS:
+            raise DeviceError(f"设置休眠时间失败 err={err}")
+        return err
+
     def get_battery(self) -> int:
         """获取电池电量（单位 mV，见 AM50 logic_protocol_manager.c::_prop_resp 的 BATTERY 分支）。
 

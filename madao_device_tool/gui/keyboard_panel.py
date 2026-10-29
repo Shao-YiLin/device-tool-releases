@@ -224,6 +224,10 @@ class KeyboardPanel(QWidget):
         self._wheel_group = self._build_wheel_group()
         root.addWidget(self._wheel_group)
 
+        # 设备休眠时间（0x10，设备通用能力）
+        self._sleep_group = self._build_sleep_group()
+        root.addWidget(self._sleep_group)
+
         # AT80 专属（按 product_no 动态显示）
         self._at80_group = self._build_at80_group()
         self._at80_group.setVisible(False)
@@ -362,6 +366,22 @@ class KeyboardPanel(QWidget):
         h.addStretch()
         return g
 
+    def _build_sleep_group(self) -> QGroupBox:
+        """设备休眠时间（0x10，设备通用能力）。"""
+        g = QGroupBox("设备休眠时间 (秒)")
+        h = QHBoxLayout(g)
+        self.sp_sleep_time = QSpinBox()
+        self.sp_sleep_time.setRange(0, 86400)
+        self.btn_sleep_time_read = QPushButton("读取")
+        self.btn_sleep_time_set = QPushButton("设置")
+        self.btn_sleep_time_read.clicked.connect(self._read_sleep_time)
+        self.btn_sleep_time_set.clicked.connect(self._set_sleep_time)
+        h.addWidget(self.sp_sleep_time)
+        h.addWidget(self.btn_sleep_time_read)
+        h.addWidget(self.btn_sleep_time_set)
+        h.addStretch()
+        return g
+
     def _build_at80_group(self) -> QGroupBox:
         """AT80 专属：从机版本号读取。"""
         g = QGroupBox("AT80 专属")
@@ -449,6 +469,17 @@ class KeyboardPanel(QWidget):
     def _set_wheel(self) -> None:
         self._safe_op("set_wheel_function", "set_wheel_function",
                       self.sp_wheel.value())
+
+    def _read_sleep_time(self) -> None:
+        def _on_val(value):
+            self.sp_sleep_time.setValue(value)
+            self._log(f"设备休眠时间: {value} 秒")
+        self._safe_op("get_sleep_time", "get_sleep_time", on_ok=_on_val)
+
+    def _set_sleep_time(self) -> None:
+        seconds = self.sp_sleep_time.value()
+        self._safe_op("set_sleep_time", "set_sleep_time", seconds,
+                      on_ok=lambda _: self._log(f"设备休眠时间已设置为 {seconds} 秒"))
 
     def _read_slave_device_version(self) -> None:
         def _on_ver(items: list):

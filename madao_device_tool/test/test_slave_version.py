@@ -380,6 +380,39 @@ def test_mouse_panel_time_sync_button():
         panel.close()
 
 
+def test_keyboard_panel_sleep_time_group():
+    """键盘面板：所有设备都有「设备休眠时间」读写（0x10 设备通用能力）。"""
+    try:
+        from PySide6.QtWidgets import QApplication
+    except ImportError:
+        print("SKIP: PySide6 未安装，跳过 GUI 用例")
+        return
+    _gui_env()
+    app = QApplication.instance() or QApplication([])
+
+    from keyboard_panel import KeyboardPanel
+
+    class _StubWorker:
+        def __init__(self):
+            self.calls = []
+
+        def async_op(self, op_id, address, method_name, *args):
+            self.calls.append((op_id, address, method_name, args))
+
+    dev = KbDevice(MockComm(), address="04:ee", name="AT80")
+    worker = _StubWorker()
+    panel = KeyboardPanel(dev, worker)
+    try:
+        assert panel.btn_sleep_time_read.text() == "读取"
+        assert panel.btn_sleep_time_set.text() == "设置"
+        panel._read_sleep_time()
+        panel._set_sleep_time()
+        methods = [c[2] for c in worker.calls]
+        assert "get_sleep_time" in methods and "set_sleep_time" in methods
+    finally:
+        panel.close()
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0
