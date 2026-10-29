@@ -188,11 +188,11 @@ def test_sync_time_roundtrip():
     assert req.payload == bytes([PropKey.SET_UTC_TIME]) + u32_to_bytes(ts)
 
 
-def test_sync_time_default_is_now_utc():
-    """缺省时间戳 = 当前 UTC 秒（设备端自行转北京时间）。"""
+def test_sync_time_default_is_now_plus_8h():
+    """缺省时间戳 = 当前系统秒 + 8h（设备端会把收到的值再 +8h，需预抵消）。"""
     comm = MockComm()
     dev = MouseDevice(comm)
-    before = int(time.time())
+    before = int(time.time() + 8 * 3600)
 
     def _resp():
         f = _last_sent_frame(comm)
@@ -202,9 +202,9 @@ def test_sync_time_default_is_now_utc():
     dev.sync_time()
     req = _last_sent_frame(comm)
     sent = int.from_bytes(req.payload[1:5], "little")
-    after = int(time.time())
+    after = int(time.time() + 8 * 3600)
     assert req.payload[0] == PropKey.SET_UTC_TIME
-    assert before <= sent <= after, f"缺省时间戳应在当前 UTC 秒附近: {sent}"
+    assert before <= sent <= after, f"缺省时间戳应在 (当前秒+8h) 附近: {sent}"
 
 
 def test_sync_time_err_raises():

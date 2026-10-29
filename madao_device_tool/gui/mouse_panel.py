@@ -702,11 +702,13 @@ class MousePanel(QWidget):
 
     def _sync_time(self) -> None:
         """时间同步：下发当前 UTC 时间戳（设备端转北京时间）。"""
-        utc_ts = int(time.time())
-        local = datetime.fromtimestamp(utc_ts + 8 * 3600).strftime("%Y-%m-%d %H:%M:%S")
-        self._safe_op("sync_time", "sync_time", utc_ts,
+        # 设备端把收到的值再 +8h 当北京时间，工具发"北京时间秒"抵消
+        # （北京时间秒 = UTC 秒 + 8*3600；设备显示 = 值 + 8h - 8h = 正确本地时间）
+        bj_ts = int(time.time() + 8 * 3600)
+        local = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        self._safe_op("sync_time", "sync_time", bj_ts,
                       on_ok=lambda _: self._log(
-                          f"时间同步成功: UTC={utc_ts}, 北京时间 {local}"))
+                          f"时间同步成功: 北京时间 {local} (ts={bj_ts})"))
 
     def _auth(self) -> None:
         self._safe_op("authenticate", "authenticate",

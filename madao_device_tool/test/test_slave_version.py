@@ -373,7 +373,9 @@ def test_mouse_panel_time_sync_button():
         assert sync_calls, "点击应派发 sync_time"
         ts = sync_calls[-1][3][0]
         import time as _time
-        assert abs(ts - int(_time.time())) < 60, f"时间戳应接近当前 UTC 秒: {ts}"
+        # 设备端把收到的值再 +8h，工具发"北京时间秒"（= UTC 秒 + 8h）抵消
+        assert abs(ts - (int(_time.time()) + 8 * 3600)) < 60, \
+            f"时间戳应接近当前秒+8h: {ts}"
     finally:
         panel.close()
 

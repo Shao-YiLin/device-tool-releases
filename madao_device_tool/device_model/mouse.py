@@ -261,15 +261,16 @@ class MouseDevice(BaseDevice):
         return err
 
     def sync_time(self, timestamp_s: Optional[int] = None) -> int:
-        """时间同步：下发 UTC 时间戳（Unix 秒）。
+        """时间同步：下发"北京时间秒"（= UTC 秒 + 8h）。
 
-        cmd=SET_SLAVE_PROP, payload=[SET_UTC_TIME(0x28)][utc_seconds(4 LE)]。
-        从机收到后转成北京时间（UTC+8）广播给音频从机
-        （MBLUE_AUDIO_SPI_TIME_SET）。
-        timestamp_s 缺省取当前 UTC 秒。
+        cmd=SET_SLAVE_PROP, payload=[SET_UTC_TIME(0x28)][seconds(4 LE)]。
+        实测设备端把收到的值再加 8h 作为北京时间广播（显示会快 8 小时），
+        因此工具端预减 8h 抵消：缺省发 UTC+8h 的本地秒，
+        设备显示 = 值 + 8h - 8h = 正确当前时间。
+        timestamp_s 缺省取当前时间 + 8h。
         """
         if timestamp_s is None:
-            timestamp_s = int(time.time())
+            timestamp_s = int(time.time() + 8 * 3600)
         ts = int(timestamp_s)
         if ts <= 0 or ts > 0xFFFFFFFF:
             raise DeviceError(f"时间戳超出 u32 范围: {ts}")
