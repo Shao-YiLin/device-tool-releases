@@ -9,6 +9,7 @@ CPI/回报率指令构造、基础信息解析。
 import os
 import sys
 import threading
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -168,6 +169,75 @@ def test_set_unsynced_file_count_err_raises():
         assert False
     except DeviceError:
         pass
+
+
+def test_sync_time_roundtrip():
+    """时间同步：SET_SLAVE_PROP[SET_UTC_TIME(0x28)][u32 LE UTC 秒]。"""
+    comm = MockComm()
+    dev = MouseDevice(comm)
+    ts = 1769472000  # 固定时间戳（秒）
+
+    def _resp():
+        f = _last_sent_frame(comm)
+        comm.inject_frame(Command.ACK, f.sequence, u32_to_bytes(ErrCode.SUCCESS))
+
+    threading.Timer(0.05, _resp).start()
+    dev.sync_time(ts)
+    req = _last_sent_frame(comm)
+    assert req.cmd == Command.SET_SLAVE_PROP
+    assert req.payload == bytes([PropKey.SET_UTC_TIME]) + u32_to_bytes(ts)
+
+
+def test_sync_time_default_is_now_utc():
+    """缺省时间戳 = 当前 UTC 秒（设备端自行转北京时间）。"""
+    comm = MockComm()
+    dev = MouseDevice(comm)
+    before = int(time.time())
+
+    def _resp():
+        f = _last_sent_frame(comm)
+        comm.inject_frame(Command.ACK, f.sequence, u32_to_bytes(ErrCode.SUCCESS))
+
+    threading.Timer(0.05, _resp).start()
+    dev.sync_time()
+    req = _last_sent_frame(comm)
+    sent = int.from_bytes(req.payload[1:5], "little")
+    after = int(time.time())
+    assert req.payload[0] == PropKey.SET_UTC_TIME
+    assert before <= sent <= after, f"缺省时间戳应在当前 UTC 秒附近: {sent}"
+
+
+def test_sync_time_err_raises():
+    comm = MockComm()
+    dev = MouseDevice(comm)
+
+    def _resp():
+        f = _last_sent_frame(comm)
+        comm.inject_frame(Command.ACK, f.sequence, u32_to_bytes(ErrCode.FAIL))
+
+    threading.Timer(0.05, _resp).start()
+    try:
+        dev.sync_time(1769472000)
+        assert False
+    except DeviceError:
+        pass
+
+
+def test_sync_time_out_of_range_raises():
+    comm = MockComm()
+    dev = MouseDevice(comm)
+    try:
+        dev.sync_time(0)
+        assert False
+    except DeviceError:
+        pass
+    try:
+        dev.sync_time(0x1_0000_0000)
+        assert False
+    except DeviceError:
+        pass
+    # 没发出任何帧
+    assert comm.sent_frames == []
 
 
 def test_compute_wifi_credentials_golden():

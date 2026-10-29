@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import struct
+import time
 from datetime import datetime
 from typing import Optional
 
@@ -429,7 +430,7 @@ class MousePanel(QWidget):
         row3.addStretch()
         v.addLayout(row3)
 
-        # 第四行：设备休眠时间（0x10）
+        # 第四行：设备休眠时间（0x10）+ 时间同步
         row4 = QHBoxLayout()
         row4.addWidget(QLabel("设备休眠(秒):"))
         self.sp_sleep_time = QSpinBox()
@@ -438,9 +439,13 @@ class MousePanel(QWidget):
         self.btn_sleep_time_set = QPushButton("设置")
         self.btn_sleep_time_read.clicked.connect(self._read_sleep_time)
         self.btn_sleep_time_set.clicked.connect(self._set_sleep_time)
+        self.btn_time_sync = QPushButton("时间同步")
+        self.btn_time_sync.setToolTip("下发当前 UTC 时间戳（Unix 秒，u32 LE）到设备")
+        self.btn_time_sync.clicked.connect(self._sync_time)
         row4.addWidget(self.sp_sleep_time)
         row4.addWidget(self.btn_sleep_time_read)
         row4.addWidget(self.btn_sleep_time_set)
+        row4.addWidget(self.btn_time_sync)
         row4.addStretch()
         v.addLayout(row4)
 
@@ -694,6 +699,14 @@ class MousePanel(QWidget):
         seconds = self.sp_sleep_time.value()
         self._safe_op("set_sleep_time", "set_sleep_time", seconds,
                       on_ok=lambda _: self._log(f"设备休眠时间已设置为 {seconds} 秒"))
+
+    def _sync_time(self) -> None:
+        """时间同步：下发当前 UTC 时间戳（设备端转北京时间）。"""
+        utc_ts = int(time.time())
+        local = datetime.fromtimestamp(utc_ts + 8 * 3600).strftime("%Y-%m-%d %H:%M:%S")
+        self._safe_op("sync_time", "sync_time", utc_ts,
+                      on_ok=lambda _: self._log(
+                          f"时间同步成功: UTC={utc_ts}, 北京时间 {local}"))
 
     def _auth(self) -> None:
         self._safe_op("authenticate", "authenticate",

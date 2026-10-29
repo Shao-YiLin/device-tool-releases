@@ -344,6 +344,40 @@ def test_mouse_panel_refresh_staged():
         panel.close()
 
 
+def test_mouse_panel_time_sync_button():
+    """鼠标面板：AM60 组有「时间同步」按钮，点击派发 sync_time（UTC 秒）。"""
+    try:
+        from PySide6.QtWidgets import QApplication
+    except ImportError:
+        print("SKIP: PySide6 未安装，跳过 GUI 用例")
+        return
+    _gui_env()
+    app = QApplication.instance() or QApplication([])
+
+    from mouse_panel import MousePanel
+
+    class _StubWorker:
+        def __init__(self):
+            self.calls = []
+
+        def async_op(self, op_id, address, method_name, *args):
+            self.calls.append((op_id, address, method_name, args))
+
+    dev = MouseDevice(MockComm(), address="04:dd", name="AM60")
+    worker = _StubWorker()
+    panel = MousePanel(dev, worker)
+    try:
+        assert panel.btn_time_sync.text() == "时间同步"
+        panel._sync_time()
+        sync_calls = [c for c in worker.calls if c[2] == "sync_time"]
+        assert sync_calls, "点击应派发 sync_time"
+        ts = sync_calls[-1][3][0]
+        import time as _time
+        assert abs(ts - int(_time.time())) < 60, f"时间戳应接近当前 UTC 秒: {ts}"
+    finally:
+        panel.close()
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

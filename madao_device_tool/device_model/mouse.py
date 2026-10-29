@@ -14,6 +14,7 @@ protocol_logic_manager.c::_set_dpi 与 AM50 logic_protocol_manager.c::MOUSE_FREQ
 from __future__ import annotations
 
 import hashlib
+import time
 from typing import Tuple
 
 from comm_lib.protocol.cmd import Command, ErrCode
@@ -257,6 +258,24 @@ class MouseDevice(BaseDevice):
         err, _ = self._set_slave_prop(PropKey.SLEEP_TIME, u32_to_bytes(seconds))
         if err != ErrCode.SUCCESS:
             raise DeviceError(f"设置休眠时间失败 err={err}")
+        return err
+
+    def sync_time(self, timestamp_s: Optional[int] = None) -> int:
+        """时间同步：下发 UTC 时间戳（Unix 秒）。
+
+        cmd=SET_SLAVE_PROP, payload=[SET_UTC_TIME(0x28)][utc_seconds(4 LE)]。
+        从机收到后转成北京时间（UTC+8）广播给音频从机
+        （MBLUE_AUDIO_SPI_TIME_SET）。
+        timestamp_s 缺省取当前 UTC 秒。
+        """
+        if timestamp_s is None:
+            timestamp_s = int(time.time())
+        ts = int(timestamp_s)
+        if ts <= 0 or ts > 0xFFFFFFFF:
+            raise DeviceError(f"时间戳超出 u32 范围: {ts}")
+        err, _ = self._set_slave_prop(PropKey.SET_UTC_TIME, u32_to_bytes(ts))
+        if err != ErrCode.SUCCESS:
+            raise DeviceError(f"时间同步失败 err={err}")
         return err
 
     def set_rate(self, hz: int) -> int:
