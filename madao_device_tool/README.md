@@ -46,6 +46,7 @@ madao_device_tool/
 │   ├── test_keyboard.py      键盘专属功能（10项）
 │   ├── test_device_config.py 设备配置识别（10项）
 │   ├── test_ota_multi_device.py 多设备并发 OTA（7项）
+│   ├── test_ota_disconnect.py OTA 窗口随设备断开移除（5项）
 │   ├── test_slave_version.py 从机版本号接口（10项）
 │   ├── test_record_test.py   录音压测引擎（10项）
 │   └── test_device_worker_pool.py 并行 worker 池桶路由（4项）
@@ -171,6 +172,8 @@ pyusb 需要 libusb 后端。Windows 下：
 - **OTA 升级完整实现**（固件 AES-128-ECB 加密 + 32 字节分片 + CRC 校验 + 进度回调）
 - **多设备并发 OTA 升级**（非模态升级窗口，多台设备各自独立进度/日志，后台并发执行）
 - **设备被动断开自动刷新**（USB 拔出 / BLE 掉线时设备列表自动移除，无需手动刷新）
+- **OTA 窗口随设备断开移除**（设备拔线/掉线时升级窗口对应行自动删除，
+  正在升级的任务同时终止）
 - **从机版本号读取**（AM60 鼠标 / AT80 键盘，GET_SLAVE_PROP[0x1F]）
 - **AM60 未同步文件数 获取/设置**（GET/SET_SLAVE_PROP[0x29]，设置用于同步流程调试）
 - **AM60 时间同步**（SET_SLAVE_PROP[0x28 SET_UTC_TIME][u32 LE]；

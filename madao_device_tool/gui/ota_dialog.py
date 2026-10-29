@@ -45,14 +45,15 @@ class _OtaTask(QObject):
     """单台设备的 OTA 任务。
 
     在后台线程里执行，Signal 把进度/日志/结果排队回主线程。
-    信号第一个参数固定为表格行号，便于对话框定位要更新的那一行。
+    信号第一个参数固定为表格行对象（行号会随设备移除而变化，
+    因此用 row 对象在回调时取实时 index 定位）。
     """
 
-    progress = Signal(int, int, int)  # (row, current, total)
-    log_msg = Signal(int, str)        # (row, message)
-    done = Signal(int, bool, str)     # (row, success, message)
+    progress = Signal(object, int, int)  # (row, current, total)
+    log_msg = Signal(object, str)        # (row, message)
+    done = Signal(object, bool, str)     # (row, success, message)
 
-    def __init__(self, row: int, dev, firmware: bytes, cancel: dict) -> None:
+    def __init__(self, row, dev, firmware: bytes, cancel: dict) -> None:
         super().__init__()
         self._row = row
         self._dev = dev
@@ -69,7 +70,6 @@ class _OtaTask(QObject):
                     self.done.emit(self._row, False, "鉴权失败，无法开始 OTA")
                     return
                 self.log_msg.emit(self._row, "鉴权成功")
-
             self.log_msg.emit(self._row, "开始传输固件…")
             success = self._dev.perform_ota(
                 self._firmware,
@@ -312,7 +312,7 @@ class OtaDialog(QDialog):
             row.progress.setValue(0)
             row.status_label.setText("升级中…")
 
-            task = _OtaTask(row.index, row.dev, data, row.cancel)
+            task = _OtaTask(row, row.dev, data, row.cancel)
             task.progress.connect(self._on_progress)
             task.log_msg.connect(self._on_log_msg)
             task.done.connect(self._on_done)
@@ -360,22 +360,21 @@ class OtaDialog(QDialog):
         return [r for r in self._rows if r.task is not None and not r.finished]
 
     # ---- 信号回调（主线程）----
-    def _on_progress(self, row_index: int, current: int, total: int) -> None:
-        row = self._row_at(row_index)
-        if row is None:
+    def _on_progress(self, row, current: int, total: int) -> None:
+        if row is None or row not in self._rows:
             return
         percent = (current / total * 100) if total > 0 else 0
         row.progress.setValue(int(percent))
         row.status_label.setText(f"升级中… {percent:.1f}%")
 
-    def _on_log_msg(self, row_index: int, msg: str) -> None:
-        row = self._row_at(row_index)
-        title = row.title if row else f"row{row_index}"
+    def _on_log_msg(self, row, msg: str) -> None:
+        title = row.title if row is not None else "未知设备"
         self._append_log(f"[{title}] {msg}")
 
-    def _on_done(self, row_index: int, success: bool, msg: str) -> None:
-        row = self._row_at(row_index)
-        if row is None:
+    def _on_done(self, row, success: bool, msg: str) -> None:
+        if row is None or row not in self._rows:
+            # 设备行已被移除（断开）：仅记录日志
+            self._append_log(f"[{row.title if row else '?'}] {msg}" if row else msg)
             return
         row.finished = True
         row.status_label.setText(msg)
@@ -388,11 +387,35 @@ class OtaDialog(QDialog):
             self.btn_start.setEnabled(True)
             self.btn_stop.setEnabled(False)
 
-    def _row_at(self, index: int) -> Optional[_DeviceRow]:
-        for row in self._rows:
-            if row.index == index:
-                return row
-        return None
+    # ---- 设备断开 ----
+    def remove_device(self, address: str) -> bool:
+        """设备断开：从表格中移除该设备行。
+
+        正在升级的设备先请求取消；移除后重排行号（行号用于定位信号来源）。
+        返回是否真的移除了。
+        """
+        row = next((r for r in self._rows if r.address == address), None)
+        if row is None:
+            return False
+        with _ACTIVE_LOCK:
+            _ACTIVE_ADDRESSES.discard(address)
+        if row.task is not None and not row.finished:
+            row.cancel["cancel"] = True
+            self._append_log(f"[{row.title}] 设备已断开，升级终止")
+        # 从后往前删表格行，避免行号偏移
+        idx = self._rows.index(row)
+        for r in self._rows[idx:]:
+            if r.task is not None and not r.finished:
+                r.cancel["cancel"] = True
+        self._rows.remove(row)
+        self.table.removeRow(row.index)
+        # 重排行号，保持 _row_at(index) 与表格一致
+        for i, r in enumerate(self._rows):
+            r.index = i
+        if not self._running_rows():
+            self.btn_start.setEnabled(True)
+            self.btn_stop.setEnabled(False)
+        return True
 
     def _append_log(self, msg: str) -> None:
         self.log_text.append(msg)

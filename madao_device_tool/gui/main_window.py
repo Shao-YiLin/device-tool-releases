@@ -448,6 +448,7 @@ class MainWindow(QMainWindow):
 
     def _handle_sub_disconnected_ui(self, address: str) -> None:
         dev = self._connected.pop(address, None)
+        self._notify_ota_device_gone(address)
         panel = self._panels.pop(address, None)
         if panel is not None:
             self.stack.removeWidget(panel)
@@ -463,6 +464,7 @@ class MainWindow(QMainWindow):
     def _handle_dongle_removed_ui(self, addresses: list) -> None:
         for addr in addresses:
             self._connected.pop(addr, None)
+            self._notify_ota_device_gone(addr)
             panel = self._panels.pop(addr, None)
             if panel is not None:
                 if self.stack.currentWidget() is panel:
@@ -511,6 +513,7 @@ class MainWindow(QMainWindow):
     def _on_disconnected(self, address: str) -> None:
         self._connected.pop(address, None)
         self._scanned_names.pop(address, None)
+        self._notify_ota_device_gone(address)
         panel = self._panels.pop(address, None)
         if panel is not None:
             self.stack.removeWidget(panel)
@@ -528,6 +531,7 @@ class MainWindow(QMainWindow):
         """主线程：清理被动断开的设备并刷新列表（可重复调用，幂等）。"""
         dev = self._connected.pop(address, None)
         self._scanned_names.pop(address, None)
+        self._notify_ota_device_gone(address)
         panel = self._panels.pop(address, None)
         if panel is not None:
             if self.stack.currentWidget() is panel:
@@ -538,6 +542,19 @@ class MainWindow(QMainWindow):
         self._rebuild_list()
         if dev is not None:
             self._log(f"设备已断开: {dev.name} ({address})")
+
+    def _notify_ota_device_gone(self, address: str) -> None:
+        """设备断开：通知所有打开的 OTA 窗口移除该设备行。"""
+        try:
+            from ota_dialog import _ACTIVE_DIALOGS
+        except Exception:
+            return
+        for dlg in list(_ACTIVE_DIALOGS):
+            try:
+                if dlg.remove_device(address):
+                    self._log(f"OTA 窗口已移除断开设备: {address}")
+            except Exception as e:
+                self._log(f"OTA 窗口移除设备失败: {e}", "ERROR")
 
     def _on_operation_result(self, op_id: str, result) -> None:
         # 转发给对应的 panel（鼠标/键盘面板用 op_id 匹配回调）
