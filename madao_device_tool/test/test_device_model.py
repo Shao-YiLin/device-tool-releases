@@ -263,13 +263,11 @@ def test_get_wifi_credentials_roundtrip():
 
     threading.Timer(0.05, _resp).start()
     ssid, pwd = dev.get_wifi_credentials()
-    # dongle MAC 读出后反转为 device_mac_addr 顺序（2C81A7F049FF 反转=FF49F0A7812C）
-    from device_model.mouse import compute_wifi_credentials
-    expected = compute_wifi_credentials("1042", mac[::-1])
-    assert (ssid, pwd) == expected
+    # MAC_MOURSE 原始字节序（不反转）直接输入
+    assert (ssid, pwd) == ("MD_7541B2D09AB7", "5C1B6C985270929C")
     req = _last_sent_frame(comm)
     assert req.cmd == Command.GET_SLAVE_PROP
-    assert req.payload == bytes([PropKey.MAC_DONGLE])
+    assert req.payload == bytes([PropKey.MAC_MOURSE])
 
 
 def test_get_device_mac():

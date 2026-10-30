@@ -135,18 +135,17 @@ class MouseDevice(BaseDevice):
 
         对齐 C generate_wifi_credentials()：input = 产品编号前 4 字符 +
         MAC 大写 HEX，SHA-256 后取 hash[0:6] 为 SSID、hash[6:14] 为密码。
-        MAC 用接收器（dongle/WiFi 模块）的 MAC——快传热点是接收器开的，
-        与鼠标自身的 MAC_MOURSE 不同；协议返回的字节序与 device_mac_addr
-        的存储顺序相反，生成前需反转。
+        MAC 用鼠标自身的 MAC_MOURSE=0x0A——快传热点的 device_mac_addr
+        由鼠标通过 SPI 推送，其字节序与协议读取顺序一致（不反转）。
         """
         pno = str(getattr(self, "product_no", "") or "")
         if len(pno) < 4:
             pno = str(self.get_product_no() or "")
-        mac = self.get_dongle_mac()
+        mac = self.get_device_mac()
         if not mac or len(mac) != 6:
-            raise DeviceError(f"获取 dongle MAC 失败: {mac!r}")
-        # 协议返回的 MAC 字节序与 device_mac_addr 相反（倒序存储），反转对齐
-        return compute_wifi_credentials(pno, bytes(mac[::-1]))
+            raise DeviceError(f"获取设备 MAC 失败: {mac!r}")
+        # 协议返回的 MAC 原始字节序即 device_mac_addr 顺序（不反转）
+        return compute_wifi_credentials(pno, mac)
 
     # ---- RGB 灯光（仅 G50 / AM40 / AM50 系列 / AM60 支持） ----
     def get_rgb_theme(self) -> Tuple[int, int, int, int]:
