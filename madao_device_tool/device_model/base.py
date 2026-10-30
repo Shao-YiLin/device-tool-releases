@@ -213,6 +213,17 @@ class BaseDevice:
         self.device_mac = bytes(data[:6])
         return self.device_mac
 
+    def get_dongle_mac(self, timeout: float = 5.0) -> bytes:
+        """获取接收器（dongle/WiFi 模块）MAC 地址（6 字节）。
+
+        快传 WiFi 热点由接收器开启，SSID/密码生成用的是 dongle 的 MAC。
+        """
+        err, data = self._get_slave_prop(PropKey.MAC_DONGLE, timeout=timeout)
+        if err != ErrCode.SUCCESS or len(data) < 6:
+            raise DeviceError(f"获取 dongle_mac 失败 err={err}")
+        self.dongle_mac = bytes(data[:6])
+        return self.dongle_mac
+
     def get_device_version(self, timeout: float = 5.0) -> int:
         """获取设备版本号（u32）。
 
