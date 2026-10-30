@@ -11,7 +11,7 @@ import time
 from typing import Dict, List, Optional
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -59,6 +59,8 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Madao 设备管理工具")
+        from _bootstrap import resource_path
+        self.setWindowIcon(QIcon(resource_path("assets", "app.ico")))
         self.resize(1100, 700)
         self.setMinimumSize(1100, 700)
 

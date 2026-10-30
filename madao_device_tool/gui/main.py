@@ -25,14 +25,39 @@ import _bootstrap  # noqa: F401·
 from logging_config import setup_logging
 setup_logging()  # 初始化日志系统（控制台+文件）
 
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from main_window import MainWindow
 
 
+def _app_icon() -> QIcon:
+    """应用 LOGO：assets/app.ico（开发/打包模式均由 resource_path 解析）。"""
+    try:
+        from _bootstrap import resource_path
+        path = resource_path("assets", "app.ico")
+        if os.path.isfile(path):
+            return QIcon(path)
+    except Exception:
+        pass
+    return QIcon()
+
+
 def main() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName("Madao Device Tool")
+    # Windows 任务栏：显式设置 AppUserModelID，防止任务栏显示默认 Python 图标
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "Madao.DeviceTool.1")
+        except Exception:
+            pass
+    icon = _app_icon()
+    if not icon.isNull():
+        app.setWindowIcon(icon)  # 主窗口/对话框标题栏 + 任务栏
     win = MainWindow()
     win.show()
     code = app.exec()

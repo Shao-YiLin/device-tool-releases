@@ -88,6 +88,9 @@ except ImportError:
     pass
 
 
+# 应用 LOGO（窗口图标随 assets 打包；exe 文件图标在 EXE(icon=)）
+APP_ICO = os.path.join(TOOL_DIR, "assets", "app.ico")
+
 a = Analysis(
     ["main.py"],
     pathex=[PKG_ROOT, TOOL_DIR, GUI_DIR],
@@ -121,7 +124,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=os.path.join(GUI_DIR, "assets", "app.ico") if os.path.exists(os.path.join(GUI_DIR, "assets", "app.ico")) else None,
+    icon=APP_ICO if os.path.isfile(APP_ICO) else None,
 )
 
 coll = COLLECT(
