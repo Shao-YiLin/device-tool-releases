@@ -432,7 +432,8 @@ class KeyboardPanel(QWidget):
 
         self._safe_op("get_product_no", "get_product_no", on_ok=_on_product_no)
         self._safe_op("get_device_mac", "get_device_mac",
-                      on_ok=lambda b: self.lbl_mac.setText(b.hex(":") if isinstance(b, bytes) else str(b)))
+                      on_ok=lambda b: self.lbl_mac.setText(
+                          bytes(b[::-1]).hex(":") if isinstance(b, bytes) else str(b)))
         self._safe_op("get_device_version", "get_device_version",
                       on_ok=lambda v: self.lbl_version.setText(_format_version(v) if isinstance(v, int) else str(v)))
         self._safe_op("get_battery", "get_battery",
