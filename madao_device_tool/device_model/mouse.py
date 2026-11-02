@@ -31,13 +31,20 @@ RGB_MODE_BREATH = 3
 RGB_MODE_TRIGGER = 4
 
 
-def compute_wifi_credentials(product_no: str, mac: bytes) -> Tuple[str, str]:
+def compute_wifi_credentials(product_no, mac: bytes) -> Tuple[str, str]:
     """快传 WiFi 凭据生成（对齐 C generate_wifi_credentials()）。
 
     input = 产品编号前 4 字符 + MAC 6 字节的大写 HEX（12 字符）；
     SHA-256 后：SSID = "MD_" + hash[0:6] 大写 HEX，密码 = hash[6:14] 大写 HEX。
+    product_no 支持 str 或 bytes（bytes 按 ascii 解码，避免 str(b'1042')
+    产生 "b'1042'" 壳导致哈希输入错误）。
     """
-    pno = str(product_no or "")[:4]
+    pno = product_no
+    if isinstance(pno, (bytes, bytearray)):
+        pno = bytes(pno).decode("ascii", errors="replace")
+    else:
+        pno = str(pno or "")
+    pno = pno[:4]
     mac_hex = "".join("%02X" % b for b in mac)
     digest = hashlib.sha256((pno + mac_hex).encode("ascii")).digest()
     ssid = "MD_" + digest[:6].hex().upper()
@@ -138,9 +145,13 @@ class MouseDevice(BaseDevice):
         MAC 用鼠标自身的 MAC_MOURSE=0x0A——快传热点的 device_mac_addr
         由鼠标通过 SPI 推送，其字节序与协议读取顺序一致（不反转）。
         """
-        pno = str(getattr(self, "product_no", "") or "")
+        pno = getattr(self, "product_no", None)
+        if isinstance(pno, (bytes, bytearray)):
+            pno = bytes(pno).decode("ascii", errors="replace")
+        else:
+            pno = str(pno or "")
         if len(pno) < 4:
-            pno = str(self.get_product_no() or "")
+            pno = bytes(self.get_product_no() or b"").decode("ascii", errors="replace")
         mac = self.get_device_mac()
         if not mac or len(mac) != 6:
             raise DeviceError(f"获取设备 MAC 失败: {mac!r}")

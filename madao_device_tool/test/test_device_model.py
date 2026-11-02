@@ -250,6 +250,15 @@ def test_compute_wifi_credentials_golden():
     assert pwd == "5C1B6C985270929C"
 
 
+def test_compute_wifi_credentials_bytes_pno():
+    """回归：product_no 为 bytes 时按 ascii 解码，禁止 str() 产生 "b'1042'" 壳。"""
+    from device_model.mouse import compute_wifi_credentials
+    mac = bytes.fromhex("2C81A7F049FF")
+    ssid_b, pwd_b = compute_wifi_credentials(b"1042", mac)
+    ssid_s, pwd_s = compute_wifi_credentials("1042", mac)
+    assert (ssid_b, pwd_b) == (ssid_s, pwd_s) == ("MD_7541B2D09AB7", "5C1B6C985270929C")
+
+
 def test_get_wifi_credentials_roundtrip():
     comm = MockComm()
     dev = MouseDevice(comm)
