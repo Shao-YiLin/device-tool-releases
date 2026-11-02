@@ -55,6 +55,7 @@ class MainWindow(QMainWindow):
     sig_passive_disconnected = Signal(str)
     sig_dongle_sub_disconnected = Signal(str)
     sig_dongle_removed = Signal(list)
+    sig_update_event = Signal(str, object)  # 在线更新事件 (kind, payload)
 
     def __init__(self) -> None:
         super().__init__()
@@ -124,6 +125,12 @@ class MainWindow(QMainWindow):
         menu_tools.addAction(self.act_audio_convert)
         menu_tools.addAction(self.act_batch_ota)
         menu_bar.addMenu(menu_tools)
+
+        menu_help = QMenu("帮助(&H)", self)
+        self.act_check_update = QAction("检查更新...", self)
+        self.act_check_update.triggered.connect(self._on_check_update)
+        menu_help.addAction(self.act_check_update)
+        menu_bar.addMenu(menu_help)
 
         central = QWidget()
         outer_layout = QVBoxLayout(central)
@@ -215,6 +222,23 @@ class MainWindow(QMainWindow):
         self._worker.error.connect(self._on_error)
 
         self.lst_devices.itemClicked.connect(self._on_list_item_clicked)
+        self.sig_update_event.connect(self._on_update_event)
+
+    # ---- 在线更新事件路由 ----
+    def _on_update_event(self, kind: str, payload) -> None:
+        if kind == "progress":
+            self._handle_update_progress(*payload)
+        elif kind == "dl_done":
+            self._handle_update_downloaded(payload)
+        elif kind == "dl_error":
+            dlg = getattr(self, "_update_progress_dlg", None)
+            if dlg is not None:
+                dlg.close()
+                self._update_progress_dlg = None
+            self._log(f"下载更新失败: {payload}", "ERROR")
+            QMessageBox.warning(self, "下载失败", f"下载更新失败:\n{payload}")
+        else:
+            self._handle_update_event(kind, payload)
 
     # ---- 实时回报率监测 ----
     def _init_polling_rate_monitor(self) -> None:
@@ -348,6 +372,102 @@ class MainWindow(QMainWindow):
             return
         self._ota_dialog = OtaDialog(devices, self._worker, parent=self)
         self._ota_dialog.show()
+
+    # ---- 在线更新 ----
+    def _on_check_update(self) -> None:
+        """检查 GitHub Release 更新，后台线程下载并提示重启。"""
+        from updater import Updater, current_version
+
+        self._log(f"检查更新… 当前版本 {current_version()}")
+        self.act_check_update.setEnabled(False)
+        up = Updater()
+
+        import threading
+
+        def _do():
+            try:
+                info = up.check()
+            except Exception as e:
+                self.sig_update_event.emit("error", str(e))
+                return
+            if info is None:
+                self.sig_update_event.emit("latest", "")
+                return
+            self.sig_update_event.emit("found", info)
+
+        threading.Thread(target=_do, daemon=True).start()
+
+    def _handle_update_event(self, kind: str, payload) -> None:
+        from updater import Updater
+        if kind == "error":
+            self._log(f"检查更新失败: {payload}", "ERROR")
+            QMessageBox.warning(self, "检查更新", f"检查失败:\n{payload}")
+        elif kind == "latest":
+            self._log("已是最新版本")
+            QMessageBox.information(self, "检查更新", "当前已是最新版本。")
+        elif kind == "found":
+            info = payload
+            body = info.body.strip() or "（无更新说明）"
+            reply = QMessageBox.question(
+                self, "发现新版本",
+                f"发现新版本 v{info.version}（当前 {__import__('updater').current_version()}）\n\n"
+                f"更新说明:\n{body}\n\n是否下载并安装更新？",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if reply == QMessageBox.Yes:
+                self._start_update_download(info)
+        self.act_check_update.setEnabled(True)
+
+    def _start_update_download(self, info) -> None:
+        """后台下载更新包，完成后询问是否重启安装。"""
+        from PySide6.QtWidgets import QProgressDialog
+        from updater import Updater
+
+        up = Updater()
+        dlg = QProgressDialog("正在下载更新…", "取消", 0, 100, self)
+        dlg.setWindowTitle("下载更新")
+        dlg.setWindowModality(Qt.WindowModal)
+        dlg.setAutoClose(False)
+        dlg.show()
+        self._update_progress_dlg = dlg
+
+        import threading
+
+        def _do():
+            try:
+                path = up.download(
+                    info,
+                    on_progress=lambda done, total:
+                        self.sig_update_event.emit("progress", (done, total)),
+                )
+            except Exception as e:
+                self.sig_update_event.emit("dl_error", str(e))
+                return
+            self.sig_update_event.emit("dl_done", path)
+
+        threading.Thread(target=_do, daemon=True).start()
+
+    def _handle_update_progress(self, done: int, total: int) -> None:
+        dlg = getattr(self, "_update_progress_dlg", None)
+        if dlg is not None and total > 0:
+            dlg.setValue(int(done / total * 100))
+
+    def _handle_update_downloaded(self, path: str) -> None:
+        from updater import Updater
+        dlg = getattr(self, "_update_progress_dlg", None)
+        if dlg is not None:
+            dlg.close()
+            self._update_progress_dlg = None
+        reply = QMessageBox.question(
+            self, "下载完成",
+            "更新包已下载完成。现在重启并安装更新？\n（工具将自动退出并重启）",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        if reply == QMessageBox.Yes:
+            self._log("开始替换并重启…")
+            try:
+                Updater().apply_and_restart(path)
+            except Exception as e:
+                self._log(f"更新替换失败: {e}", "ERROR")
+                QMessageBox.warning(self, "更新失败", f"替换失败: {e}")
 
     # ---- 录音菜单 ----
     def _on_toggle_save_record(self, checked: bool) -> None:

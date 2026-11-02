@@ -62,6 +62,7 @@ hiddenimports += collect_submodules("device_mgr")
 hiddenimports += collect_submodules("devtool")
 hiddenimports += [
     "device_config", "record_config", "logging_config", "exceptions", "_bootstrap",
+    "updater",
 ]
 # gui 内模块（包外导入风格）
 hiddenimports += [
