@@ -78,6 +78,10 @@ class Updater:
         """检查是否有新版本。返回 UpdateInfo 或 None。"""
         try:
             data = self._fetch_json(self._api)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise RuntimeError("更新服务器尚未发布任何版本") from e
+            raise RuntimeError(f"检查更新失败（HTTP {e.code}）") from e
         except (urllib.error.URLError, TimeoutError) as e:
             raise RuntimeError(f"检查更新失败（网络错误）: {e}") from e
         tag = data.get("tag_name", "")

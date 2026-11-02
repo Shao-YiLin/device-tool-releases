@@ -15,10 +15,12 @@
 """
 import argparse
 import hashlib
+import json
 import os
 import shutil
 import subprocess
 import sys
+import urllib.request
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,6 +28,7 @@ DIST = os.path.join(ROOT, "dist", "MadaoDeviceTool")
 SPEC = os.path.join(ROOT, "madao_device_tool", "gui", "gui.spec")
 OUT = os.path.join(ROOT, "release")
 ASSET = "MadaoDeviceTool.zip"
+REPO = "Shao-YiLin/device-tool-releases"
 
 
 def build():
@@ -60,11 +63,56 @@ def make_zip(version: str):
 
 
 def upload(version: str, zip_path: str, sha_path: str):
+    """上传 Release。
+
+    优先用 gh CLI（需 gh auth login）；没有 gh 时用 GITHUB_TOKEN 环境变量
+    调 GitHub API（token 需 repo 权限）。
+    """
     tag = "v" + version
-    subprocess.run(["gh", "release", "create", tag, zip_path, sha_path,
-                    "--repo", "Shao-YiLin/device-tool-releases",
-                    "--title", f"v{version}",
-                    "--notes", f"版本 v{version}"], check=True)
+    if shutil.which("gh"):
+        subprocess.run(["gh", "release", "create", tag, zip_path, sha_path,
+                        "--repo", REPO, "--title", f"v{version}",
+                        "--notes", f"版本 v{version}"], check=True)
+        return
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        raise SystemExit(
+            "未找到 gh CLI，且未设置 GITHUB_TOKEN 环境变量。\n"
+            "二选一：\n"
+            "  1) 安装 GitHub CLI 并执行 gh auth login\n"
+            "  2) 设置环境变量 GITHUB_TOKEN=<你的 PAT，权限 repo>\n"
+            "或手动上传：GitHub 网页 → Releases → Draft a new release → "
+            f"tag={tag} → 拖入 {zip_path} 和 {sha_path}")
+    api = f"https://api.github.com/repos/{REPO}/releases"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "MadaoDeviceTool-release",
+    }
+    # 1) 建 release（draft 先不发布，确认无误再 publish）
+    body = json.dumps({
+        "tag_name": tag,
+        "name": f"v{version}",
+        "body": f"版本 v{version}",
+        "draft": False,
+        "prerelease": False,
+    }).encode()
+    req = urllib.request.Request(api, data=body, headers=headers, method="POST")
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        rel = json.loads(resp.read().decode())
+    upload_url = rel["upload_url"].split("{")[0]
+    # 2) 传资产
+    for path in (zip_path, sha_path):
+        name = os.path.basename(path)
+        with open(path, "rb") as f:
+            data = f.read()
+        h = dict(headers)
+        h["Content-Type"] = "application/octet-stream"
+        req = urllib.request.Request(f"{upload_url}?name={name}", data=data,
+                                     headers=h, method="POST")
+        with urllib.request.urlopen(req, timeout=600) as resp:
+            print(f"已上传: {name} ({len(data)} 字节)")
+    print(f"Release 地址: {rel['html_url']}")
 
 
 def main():
