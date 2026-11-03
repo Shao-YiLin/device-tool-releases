@@ -95,6 +95,9 @@ class MainWindow(QMainWindow):
         self.sig_dongle_removed.connect(self._handle_dongle_removed_ui)
         self.statusBar().showMessage("就绪")
 
+        # 启动 3 秒后静默检查更新（有新版才提示，断网/无 Release 不打扰）
+        QTimer.singleShot(3000, lambda: self._check_update(silent=True))
+
     # ---- UI 构建 ----
     def _build_ui(self) -> None:
         # 菜单栏
@@ -127,9 +130,9 @@ class MainWindow(QMainWindow):
         menu_bar.addMenu(menu_tools)
 
         menu_help = QMenu("帮助(&H)", self)
-        self.act_check_update = QAction("检查更新...", self)
-        self.act_check_update.triggered.connect(self._on_check_update)
-        menu_help.addAction(self.act_check_update)
+        self.act_about = QAction("关于...", self)
+        self.act_about.triggered.connect(self._show_about)
+        menu_help.addAction(self.act_about)
         menu_bar.addMenu(menu_help)
 
         central = QWidget()
@@ -374,32 +377,51 @@ class MainWindow(QMainWindow):
         self._ota_dialog.show()
 
     # ---- 在线更新 ----
-    def _on_check_update(self) -> None:
-        """检查 GitHub Release 更新，后台线程下载并提示重启。"""
+    def _show_about(self) -> None:
+        """帮助 → 关于：版本信息 + 检查更新入口。"""
+        from updater import current_version
+        box = QMessageBox(self)
+        box.setWindowTitle("关于")
+        box.setIcon(QMessageBox.Information)
+        box.setText(
+            f"<b>Madao 设备管理工具</b><br>"
+            f"版本: v{current_version()}<br>"
+            f"<a href='https://github.com/Shao-YiLin/device-tool-releases'>"
+            f"GitHub Releases</a>")
+        btn_check = box.addButton("检查更新", QMessageBox.ActionRole)
+        box.addButton(QMessageBox.Close)
+        box.exec()
+        if box.clickedButton() is btn_check:
+            self._check_update(silent=False)
+
+    def _check_update(self, silent: bool = False) -> None:
+        """检查 GitHub Release 更新（后台线程）。
+
+        silent=True（启动自动检查）时：无新版不打扰，仅发现新版时提示。
+        """
         from updater import Updater, current_version
 
         self._log(f"检查更新… 当前版本 {current_version()}")
-        self.act_check_update.setEnabled(False)
         up = Updater()
-
         import threading
 
         def _do():
             try:
                 info = up.check()
             except Exception as e:
-                self.sig_update_event.emit("error", str(e))
+                self.sig_update_event.emit("error_silent" if silent else "error", str(e))
                 return
             if info is None:
-                self.sig_update_event.emit("latest", "")
+                self.sig_update_event.emit("latest" if not silent else "", "")
                 return
             self.sig_update_event.emit("found", info)
 
         threading.Thread(target=_do, daemon=True).start()
 
     def _handle_update_event(self, kind: str, payload) -> None:
-        from updater import Updater
-        if kind == "error":
+        if kind == "error_silent":
+            self._log(f"启动检查更新失败（静默忽略）: {payload}", "ERROR")
+        elif kind == "error":
             self._log(f"检查更新失败: {payload}", "ERROR")
             QMessageBox.warning(self, "检查更新", f"检查失败:\n{payload}")
         elif kind == "latest":
@@ -410,12 +432,12 @@ class MainWindow(QMainWindow):
             body = info.body.strip() or "（无更新说明）"
             reply = QMessageBox.question(
                 self, "发现新版本",
-                f"发现新版本 v{info.version}（当前 {__import__('updater').current_version()}）\n\n"
+                f"发现新版本 v{info.version}（当前 v"
+                f"{__import__('updater').current_version()}）\n\n"
                 f"更新说明:\n{body}\n\n是否下载并安装更新？",
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             if reply == QMessageBox.Yes:
                 self._start_update_download(info)
-        self.act_check_update.setEnabled(True)
 
     def _start_update_download(self, info) -> None:
         """后台下载更新包，完成后询问是否重启安装。"""
